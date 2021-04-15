@@ -22,9 +22,7 @@ Route::get('/', function () {
 // })->name('dashboard');
 
 Route::middleware(['auth:sanctum', 'verified'])->group(function(){
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard',[CampaignController::class, 'dashboard'])->name('dashboard');
 
     Route::get('/dashboard/new', function () {
          return view('pages.newcampaignpage');
