@@ -4,12 +4,17 @@
             {{ __('Dashboard') }}
         </h2>
     </x-slot>
-
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <x-jet-welcome />
+    
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4 mt-5">
+                <a href="/dashboard/new" class="btn btn-primary">New Compaign</a>
             </div>
         </div>
+
     </div>
+
+
+
+    
 </x-app-layout>
