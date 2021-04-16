@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CampaignController;
+use App\Http\Controllers\CustomMessageController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -22,13 +23,17 @@ Route::get('/', function () {
 // })->name('dashboard');
 
 Route::middleware(['auth:sanctum', 'verified'])->group(function(){
-    Route::get('/dashboard',[CampaignController::class, 'dashboard'])->name('dashboard');
+    Route::match(['GET','POST'],'/dashboard',[CampaignController::class, 'dashboard'])->name('dashboard');
 
     Route::get('/dashboard/new', function () {
          return view('pages.newcampaignpage');
     });
 
     Route::post('/dashboard/createNewCampign', [CampaignController::class, 'createCampaign']);
-    
+    Route::match(['GET','POST'],'/dashboard/winner', [CampaignController::class, 'winner']);
+    Route::get('/dashboard/editCampaignPage/{id}',[CampaignController::class, 'editCampaignPage']);
+    Route::post('/dashboard/updateCampaignPage/{id}',[CampaignController::class, 'updateCampaign']);
+    Route::get('/dashboard/customMessage/',[CustomMessageController::class, 'customMessagePage']);
+    Route::post('/dashboard/newCustomMessage',[CustomMessageController::class, 'newCustomMessage']);
 
 });
