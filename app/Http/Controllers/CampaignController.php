@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Campaign;
 use App\Models\Bid;
+use App\Models\Subscriber;
+use IDEABIZ;
+use Carbon\Carbon;
 
 class CampaignController extends Controller
 {
@@ -82,6 +85,33 @@ class CampaignController extends Controller
         $campaign->state = '0';
         $campaign->save();
         return redirect()->back()->with('success', 'Campaign Updated !!');
+    }
+
+    public function receiveRegsms(Request $request){
+        $statusCode = $request->statusCode;
+        if($statusCode == "SUCCESS"){
+            $message = $request->message;
+            $subscribeResponse = $request->data['subscribeResponse'];
+            $msisdn = $subscribeResponse['msisdn'];
+            $status = $subscribeResponse['status'];
+            $serviceId = $subscribeResponse['serviceID'];
+
+            $sub = Subscriber::where('msisdn', $msisdn)->first();
+            if($sub == null){
+                $subscriber = new Subscriber;
+                $subscriber->msisdn = $msisdn;
+                $subscriber->subscribed_time = Carbon::now();
+                $subscriber->status = $status;
+                $saved = $subscriber->save();
+
+                if($saved){
+                    return response("Subscribed Successfully");
+                }
+
+            }
+            
+        }
+        
     }
 
 }

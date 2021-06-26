@@ -37,3 +37,6 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function(){
     Route::post('/dashboard/newCustomMessage',[CustomMessageController::class, 'newCustomMessage']);
 
 });
+
+Route::get('/test', [CampaignController::class, 'test']);
+Route::get('/receiveRegsms', [CampaignController::class, 'receiveRegsms']);
