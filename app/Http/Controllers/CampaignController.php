@@ -114,4 +114,19 @@ class CampaignController extends Controller
         
     }
 
+    public function test(){
+        IDEABIZ::generateAccessToken();
+        $access_token = IDEABIZ::getAccessToken();
+        $url = "https://ideabiz.lk/apicall/subscription/v3/status/tel%3A%2B94770453201";
+        $method = "GET";
+        $headers = [
+                "Content-Type" => "application/json",
+                "Authorization" => "Bearer ".$access_token,
+                "Accept" => "application/json",
+           ];
+        $request_body = [];
+        $response = IDEABIZ::apiCall($url, $method, $headers, $request_body);
+        print_r((string)$response->getBody());
+    }
+
 }
