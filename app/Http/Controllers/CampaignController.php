@@ -88,6 +88,7 @@ class CampaignController extends Controller
     }
 
     public function receiveRegsms(Request $request){
+        
         $statusCode = $request->statusCode;
         if($statusCode == "SUCCESS"){
             $message = $request->message;
