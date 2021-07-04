@@ -115,6 +115,24 @@ class CampaignController extends Controller
         
     }
 
+    public function activateCamapign(){
+            $currentDate = Carbon::now()->format('Y-m-d');
+            $campaign = Campaign::where('create_date','<=',$currentDate)->where('expire_date','>=',$currentDate)->first(); 
+            if($campaign ==null){
+                Campaign::where('state','=','1')->update(['state'=>0]);
+            }elseif($campaign->state == 0){
+                Campaign::where('state','=','1')->update(['state'=>0]);
+                $campaign->state = 1;
+                $this->activeCamapign = $campaign;
+                $campaign->save();
+                
+                \Log::info("state become 1!"); 
+            }
+
+            \Log::info("Cron is working fine!");
+                
+    }
+
     public function test(){
         IDEABIZ::generateAccessToken();
         $access_token = IDEABIZ::getAccessToken();
