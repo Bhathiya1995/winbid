@@ -8,6 +8,7 @@ use App\Models\Bid;
 use App\Models\Subscriber;
 use IDEABIZ;
 use Carbon\Carbon;
+use App\Models\Event;
 
 class CampaignController extends Controller
 {
@@ -87,17 +88,19 @@ class CampaignController extends Controller
         return redirect()->back()->with('success', 'Campaign Updated !!');
     }
 
-    public function receiveRegsms(Request $request){
-        
-        $statusCode = $request->statusCode;
-        if($statusCode == "SUCCESS"){
-            $message = $request->message;
-            $subscribeResponse = $request->data['subscribeResponse'];
-            $msisdn = $subscribeResponse['msisdn'];
-            $status = $subscribeResponse['status'];
-            $serviceId = $subscribeResponse['serviceID'];
 
-            $sub = Subscriber::where('msisdn', $msisdn)->first();
+
+    public function receiveRegsms(Request $request){
+        $status = $request->status;
+        $action = $request->action;
+        $msisdn = $request->msisdn;
+        $serviceId = $request->serviceID;
+
+        $sub = Subscriber::where('msisdn', "$msisdn")->first();
+        
+        if($action == "STATE_CHANGE" and $status== "SUBSCRIBED"){
+            $campaign = Campaign::where('state', '1')->first();
+            
             if($sub == null){
                 $subscriber = new Subscriber;
                 $subscriber->msisdn = $msisdn;
@@ -106,14 +109,85 @@ class CampaignController extends Controller
                 $saved = $subscriber->save();
 
                 if($saved){
-                    return response("Subscribed Successfully");
+                    $event = new Event;
+                    $event->msisdn = $msisdn;
+                    $event->trigger = "SUBSCRIBER";
+                    $event->event = "SUBSCRIBE"; 
+                    $event->status = "SUCCESS";
+                    $event->save();
+                    
+                    $message = $campaign->welcome_msg;
+                    $this->sendSmsForOne($msisdn, $message);
                 }
 
+            }else if($sub->status == "UNSUBSCRIBED"){
+                $sub->subscribed_time = Carbon::now();
+                $sub->status = $status;
+                $saved = $sub->save();
+                if($saved){
+                    $event = new Event;
+                    $event->msisdn = $msisdn;
+                    $event->trigger = "SUBSCRIBER";
+                    $event->event = "SUBSCRIBE"; 
+                    $event->status = "SUCCESS";
+                    $event->save();
+
+                    $message = $campaign->welcome_msg;
+                    $this->sendSmsForOne($msisdn, $message);
+                }
+                
             }
             
+        } else if($action == "STATE_CHANGE" and $status= "UNSUBSCRIBED"){
+            if ($sub != null and $sub->status == "SUBSCRIBED"){
+                $sub->unsubscribed_time = Carbon::now();
+                $sub->status = $status;
+                $saved = $sub->save();
+                if($saved){
+                    $event = new Event;
+                    $event->msisdn = $msisdn;
+                    $event->trigger = "SUBSCRIBER";
+                    $event->event = "UNSUBSCRIBE"; 
+                    $event->status = "SUCCESS";
+                    $event->save();
+                }
+            }
         }
         
     }
+
+    public function sendSmsForOne($msisdn, $message){
+        IDEABIZ::generateAccessToken();
+        $access_token = IDEABIZ::getAccessToken();
+    
+        $url = "https://ideabiz.lk/apicall/smsmessaging/v3/outbound/87798/requests";        
+        $method = "POST";
+        $headers = [
+            "Content-Type" => "application/json;charset=UTF-8",
+            "Authorization" => "Bearer ".$access_token,
+            "Accept" => "application/json",
+        ];
+    $request_body = [
+        "outboundSMSMessageRequest"=> [
+            "address" =>[
+                $msisdn
+            ],
+            "senderAddress"=> "tel:87798",
+            "outboundSMSTextMessage"=>[
+                "message"=> $message
+            ],
+            "receiptRequest"=> [
+                "notifyURL" => ""
+                ],
+            
+        
+        ]
+    ];
+
+    $response = IDEABIZ::apiCall($url, $method, $headers, $request_body);
+    }
+
+    
 
     public function activateCamapign(){
             $currentDate = Carbon::now()->format('Y-m-d');
