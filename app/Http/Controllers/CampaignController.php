@@ -88,9 +88,18 @@ class CampaignController extends Controller
         return redirect()->back()->with('success', 'Campaign Updated !!');
     }
 
+    public function receiveSms(Request $request){
+        \Log::info("receivesms URL");
+        \Log::info($request);
+    }
+
 
 
     public function receiveRegsms(Request $request){
+
+        \Log::info("receiveRegsms URL");
+        \Log::info($request);
+
         $status = $request->status;
         $action = $request->action;
         $msisdn = $request->msisdn;
