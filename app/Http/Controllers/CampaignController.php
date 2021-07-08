@@ -93,9 +93,14 @@ class CampaignController extends Controller
         \Log::info($request);
     }
 
+    public function receiveRegSms(Request $request){
+        \Log::info("receivesms URL");
+        \Log::info($request);
+    }
 
 
-    public function receiveRegsms(Request $request){
+
+    public function admin(Request $request){
 
         \Log::info("receiveRegsms URL");
         \Log::info($request);
@@ -126,7 +131,7 @@ class CampaignController extends Controller
                     $event->save();
                     
                     $message = $campaign->welcome_msg;
-                    // $this->sendSmsForOne($msisdn, $message);
+                    $this->sendSmsForOne($msisdn, $message);
                 }
 
             }else if($sub->status == "UNSUBSCRIBED"){
@@ -142,7 +147,7 @@ class CampaignController extends Controller
                     $event->save();
 
                     $message = $campaign->welcome_msg;
-                    // $this->sendSmsForOne($msisdn, $message);
+                    $this->sendSmsForOne($msisdn, $message);
                 }
                 
             }
@@ -165,10 +170,6 @@ class CampaignController extends Controller
         
     }
 
-    public function admin(Request $request){
-        \Log::info("admin api URL");
-        \Log::info($request);
-    }
 
     public function sendSmsForOne($msisdn, $message){
         IDEABIZ::generateAccessToken();
