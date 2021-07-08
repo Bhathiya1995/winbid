@@ -130,8 +130,11 @@ class CampaignController extends Controller
                     $event->status = "SUCCESS";
                     $event->save();
                     
-                    $message = $campaign->welcome_msg;
-                    $this->sendSmsForOne($msisdn, $message);
+                    if($campaign != null){
+                        $message = $campaign->welcome_msg;
+                        $this->sendSmsForOne($msisdn, $message);
+                    }
+                    
                 }
 
             }else if($sub->status == "UNSUBSCRIBED"){
@@ -146,8 +149,10 @@ class CampaignController extends Controller
                     $event->status = "SUCCESS";
                     $event->save();
 
-                    $message = $campaign->welcome_msg;
-                    $this->sendSmsForOne($msisdn, $message);
+                    if($campaign != null){
+                        $message = $campaign->welcome_msg;
+                        $this->sendSmsForOne($msisdn, $message);
+                    }
                 }
                 
             }
