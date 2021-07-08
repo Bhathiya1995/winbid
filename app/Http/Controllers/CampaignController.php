@@ -99,7 +99,7 @@ class CampaignController extends Controller
 
         \Log::info("receiveRegsms URL");
         \Log::info($request);
-
+        
         $status = $request->status;
         $action = $request->action;
         $msisdn = $request->msisdn;
@@ -126,7 +126,7 @@ class CampaignController extends Controller
                     $event->save();
                     
                     $message = $campaign->welcome_msg;
-                    $this->sendSmsForOne($msisdn, $message);
+                    // $this->sendSmsForOne($msisdn, $message);
                 }
 
             }else if($sub->status == "UNSUBSCRIBED"){
@@ -142,7 +142,7 @@ class CampaignController extends Controller
                     $event->save();
 
                     $message = $campaign->welcome_msg;
-                    $this->sendSmsForOne($msisdn, $message);
+                    // $this->sendSmsForOne($msisdn, $message);
                 }
                 
             }
@@ -163,6 +163,11 @@ class CampaignController extends Controller
             }
         }
         
+    }
+
+    public function admin(Request $request){
+        \Log::info("admin api URL");
+        \Log::info($request);
     }
 
     public function sendSmsForOne($msisdn, $message){
