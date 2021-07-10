@@ -138,8 +138,7 @@ class CampaignController extends Controller
                     
                     if($campaign != null){
                         $message = $campaign->welcome_msg;
-                        print_r("Successfully subscribed");
-                        // $this->sendSmsForOne($msisdn, $message);
+                        $this->sendSmsForOne($msisdn, $message);
                     }
                     
                 }
@@ -158,8 +157,7 @@ class CampaignController extends Controller
 
                     if($campaign != null){
                         $message = $campaign->welcome_msg;
-                        print_r("Successfully subscribed");
-                        // $this->sendSmsForOne($msisdn, $message);
+                        $this->sendSmsForOne($msisdn, $message);
                     }
                 }
                 
