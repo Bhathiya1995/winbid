@@ -190,7 +190,7 @@ class CampaignController extends Controller
     $request_body = [
         "outboundSMSMessageRequest"=> [
             "address" =>[
-                $msisdn
+                "tel:+".$msisdn
             ],
             "senderAddress"=> "tel:87798",
             "outboundSMSTextMessage"=>[
