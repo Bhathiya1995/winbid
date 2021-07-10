@@ -107,7 +107,13 @@ class CampaignController extends Controller
         
         $status = $request->status;
         $action = $request->action;
-        $msisdn = $request->msisdn;
+
+        if($status== "SUBSCRIBED"){
+            $msisdn = $request->msisdn;
+        }else if($status= "UNSUBSCRIBED"){
+            $msisdn ="tel:+".$request->msisdn;
+        }
+        
         $serviceId = $request->serviceID;
 
         $sub = Subscriber::where('msisdn', "$msisdn")->first();
@@ -132,7 +138,8 @@ class CampaignController extends Controller
                     
                     if($campaign != null){
                         $message = $campaign->welcome_msg;
-                        $this->sendSmsForOne($msisdn, $message);
+                        print_r("Successfully subscribed");
+                        // $this->sendSmsForOne($msisdn, $message);
                     }
                     
                 }
@@ -151,7 +158,8 @@ class CampaignController extends Controller
 
                     if($campaign != null){
                         $message = $campaign->welcome_msg;
-                        $this->sendSmsForOne($msisdn, $message);
+                        print_r("Successfully subscribed");
+                        // $this->sendSmsForOne($msisdn, $message);
                     }
                 }
                 
@@ -169,6 +177,8 @@ class CampaignController extends Controller
                     $event->event = "UNSUBSCRIBE"; 
                     $event->status = "SUCCESS";
                     $event->save();
+
+                    print_r("Successfully unsubscribed");
                 }
             }
         }
@@ -190,7 +200,7 @@ class CampaignController extends Controller
     $request_body = [
         "outboundSMSMessageRequest"=> [
             "address" =>[
-                "tel:+".$msisdn
+                $msisdn
             ],
             "senderAddress"=> "tel:87798",
             "outboundSMSTextMessage"=>[
