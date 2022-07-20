@@ -88,9 +88,121 @@ class CampaignController extends Controller
         return redirect()->back()->with('success', 'Campaign Updated !!');
     }
 
+    public function getLastBidRange($campaign_id) {
+        $bids = Bid::where('campaign_id', $campaign_id)->orderBy('bid_value','ASC')->get();
+        foreach ($bids as $bid){
+            $bid_val = $bid->bid_value;
+            $bidCount = Bid::where([['campaign_id','=', $campaign_id],['bid_value','=',$bid_val]])->count();
+            if ($bidCount == 1){
+                $low = (($bid_val - 9) <0 ? 0 : ($bid_val - 9));
+                $high = (($bid_val - 9) <0 ? 20 : ($bid_val + 9));
+                break;
+            }
+        }
+        $range = [$low, $high];
+        return $range;
+    }
+
     public function receiveSms(Request $request){
         \Log::info("receivesms URL");
         \Log::info($request);
+        $inboundSMSMessageNotification = $request->inboundSMSMessageNotification;
+           $inboundSMSMessage = $inboundSMSMessageNotification['inboundSMSMessage'];
+           $senderAddress = $inboundSMSMessage['senderAddress'];
+           $message = $inboundSMSMessage['message'];
+           $words = explode(" ", $message);          
+
+           if($this->isSubscriber($senderAddress)){
+                if (count($words) == 2 and $words[0] == "REG" and $words[1] == "BID" ) {
+                    $message = "You have already subscribed to the service.";
+                    $this->sendSmsForOne($senderAddress, $message);    
+                } 
+                elseif (count($words) == 2 and $words[0] == "LANSU" and is_numeric($words[1]) ){
+                    $todayBidsCount = Bid::whereDate('created_at', Carbon::today())->count();
+
+                    if($todayBidsCount >=0 and $todayBidsCount<3){
+                        $campaign = Campaign::where('state', '1')->first();
+                        $bid = new Bid;
+                        $bid->campaign_id = $campaign->id;
+                        $bid->bid_value = $words[1];
+                        $bid->tel_number = $senderAddress;
+                        $bid->status = "0";
+                        $bid->save();
+                        $availabelBids = 2-$todayBidsCount;
+
+                        $range=[];
+                        $range = $this->getLastBidRange($campaign->id);
+
+                        $message = "Hurry Up! Your bid of {$words[1]} is not the winning bid at the moment. Now Lowest bid range is {$range[0]} - {$range[1]}. You have {$availabelBids} more free bid(s) for today";
+                        $this->sendSmsForOne($senderAddress, $message);
+                        print_r("SEND SMS ---> Thanks for your bid. You have {$availabelBids} chanses for today");
+                    }else{
+                        $message = "Sorry. Your daily bidding chances exceeded, Please try again tomorrow. To win more gifts stay tuned with WASANA SMS service.";
+                        $this->sendSmsForOne($senderAddress, $message);
+                        // print_r("SEND SMS ---> Your chanses for bid today is over. Try again tommorrow");
+                    }
+
+                    
+                }else{
+                    // print_r("SEND SMS ---> Message is invalid");
+                    $message = "Sorry invalid BID Amount! Method of bidding is, type BID<space> BID VALUE and SMS to 66777";
+                    $this->sendSmsForOne($senderAddress, $message);
+                }
+           }else {
+            print_r($words);
+                if (count($words) == 2 and $words[0] == "REG" and $words[1] == "BID" ) {
+                    $subscriber = new Subscriber;
+                    $subscriber->msisdn = $senderAddress;
+                    $subscriber->subscribed_time = Carbon::now();
+                    $subscriber->status = "SUBSCRIBED";
+                    $saved = $subscriber->save();
+                    $campaign = Campaign::where('state', '1')->first();
+
+                    if($saved){
+                        $event = new Event;
+                        $event->msisdn = $senderAddress;
+                        $event->trigger = "SUBSCRIBER";
+                        $event->event = "SUBSCRIBE"; 
+                        $event->status = "SUCCESS";
+                        $event->save();
+
+                        $message = "Successfully subscribed to WASANA service. Rs.5 +tax/day apply. To deactivate type UNREG  BID & SMS to 66777. T&C:<T&C WASANA>";
+                        $this->sendSmsForOne($senderAddress, $message);
+                        
+                        if($campaign != null){
+                            $message = $campaign->welcome_msg;
+                            $this->sendSmsForOne($senderAddress, $message);
+                        }
+                        
+                    }
+                }else{
+                    // print_r("SEND SMS ---> You're not subscribed our service");
+                    $message = "You're not subscribed our service";
+                    $this->sendSmsForOne($senderAddress, $message);
+                }
+               
+           }
+    }
+
+    public function isSubscriber($tel_no){
+        IDEABIZ::generateAccessToken();
+        $access_token = IDEABIZ::getAccessToken();
+        $url = "https://ideabiz.lk/apicall/subscription/v3/status/tel%3A%2B{$tel_no}";
+        $method = "GET";
+        $headers = [
+                "Content-Type" => "application/json",
+                "Authorization" => "Bearer ".$access_token,
+                "Accept" => "application/json",
+        ];
+        $request_body = [];
+        $response = IDEABIZ::apiCall($url, $method, $headers, $request_body);
+        $body = $response->getBody();
+        $res = json_decode($body);
+        if($res->statusCode == "SUCCESS" AND $res->data->subscribeResponse->status == "SUBSCRIBED"){
+            return true;
+        }else{
+            return false;
+        }
     }
 
     public function receiveRegSms(Request $request){
@@ -188,7 +300,7 @@ class CampaignController extends Controller
         IDEABIZ::generateAccessToken();
         $access_token = IDEABIZ::getAccessToken();
     
-        $url = "https://ideabiz.lk/apicall/smsmessaging/v3/outbound/87798/requests";        
+        $url = "https://ideabiz.lk/apicall/smsmessaging/v3/outbound/66777/requests";        
         $method = "POST";
         $headers = [
             "Content-Type" => "application/json;charset=UTF-8",
@@ -198,9 +310,9 @@ class CampaignController extends Controller
     $request_body = [
         "outboundSMSMessageRequest"=> [
             "address" =>[
-                $msisdn
+                "tel:+".$msisdn
             ],
-            "senderAddress"=> "tel:87798",
+            "senderAddress"=> "tel:66777",
             "outboundSMSTextMessage"=>[
                 "message"=> $message
             ],
@@ -248,6 +360,11 @@ class CampaignController extends Controller
         $request_body = [];
         $response = IDEABIZ::apiCall($url, $method, $headers, $request_body);
         print_r((string)$response->getBody());
+    }
+
+    public function test1(){
+        print_r("abc");
+        $this->getLastBidRange(1);
     }
 
 }

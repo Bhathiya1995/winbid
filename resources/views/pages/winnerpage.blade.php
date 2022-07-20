@@ -55,8 +55,8 @@
                             <tbody>
                                     @foreach($allUniqueWinners as $allwinner)
                                     <tr>
-                                        <td>{{$allwinner->bid_value}}</td>
                                         <td>{{$allwinner->id}}</td>
+                                        <td>{{$allwinner->bid_value}}</td>
                                         <td>{{$allwinner->tel_number}}</td>
                                         <td>{{$allwinner->status == "1" ? 'active': 'deactive'}}</td>
                                       </tr>

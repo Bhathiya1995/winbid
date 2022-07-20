@@ -39,6 +39,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function(){
 });
 
 Route::get('/test', [CampaignController::class, 'test']);
+Route::get('/test1', [CampaignController::class, 'test1']);
 Route::post('/receiveRegsms', [CampaignController::class, 'receiveRegsms']);
 Route::post('/receivesms', [CampaignController::class, 'receiveSms']);
 Route::post('/adminapi', [CampaignController::class, 'admin']);
