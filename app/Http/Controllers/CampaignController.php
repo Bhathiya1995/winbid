@@ -117,7 +117,7 @@ class CampaignController extends Controller
                     $message = "You have already subscribed to the service.";
                     $this->sendSmsForOne($senderAddress, $message);    
                 } 
-                elseif (count($words) == 2 and $words[0] == "LANSU" and is_numeric($words[1]) ){
+                elseif (count($words) == 2 and $words[0] == "BID" and is_numeric($words[1]) ){
                     $todayBidsCount = Bid::whereDate('created_at', Carbon::today())->count();
 
                     if($todayBidsCount >=0 and $todayBidsCount<3){
