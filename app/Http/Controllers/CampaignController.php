@@ -111,13 +111,16 @@ class CampaignController extends Controller
            $senderAddress = $inboundSMSMessage['senderAddress'];
            $message = $inboundSMSMessage['message'];
            $words = explode(" ", $message);          
-
+           \Log::info("Start receiveSms.");
            if($this->isSubscriber($senderAddress)){
+            \Log::info("Start isSubscriber.");
                 if (count($words) == 2 and $words[0] == "REG" and $words[1] == "BID" ) {
+                    \Log::info("You have already subscribed to the service.");
                     $message = "You have already subscribed to the service.";
                     $this->sendSmsForOne($senderAddress, $message);    
                 } 
                 elseif (count($words) == 2 and $words[0] == "BID" and is_numeric($words[1]) ){
+                    \Log::info("inside the bid");
                     $todayBidsCount = Bid::whereDate('created_at', Carbon::today())->count();
 
                     if($todayBidsCount >=0 and $todayBidsCount<3){
@@ -134,9 +137,11 @@ class CampaignController extends Controller
                         $range = $this->getLastBidRange($campaign->id);
 
                         $message = "Hurry Up! Your bid of {$words[1]} is not the winning bid at the moment. Now Lowest bid range is {$range[0]} - {$range[1]}. You have {$availabelBids} more free bid(s) for today";
+                        \Log::info(" Thanks for your bid.");
                         $this->sendSmsForOne($senderAddress, $message);
                         print_r("SEND SMS ---> Thanks for your bid. You have {$availabelBids} chanses for today");
                     }else{
+                        \Log::info("Sorry. Your daily bidding chances exceede");
                         $message = "Sorry. Your daily bidding chances exceeded, Please try again tomorrow. To win more gifts stay tuned with WASANA SMS service.";
                         $this->sendSmsForOne($senderAddress, $message);
                         // print_r("SEND SMS ---> Your chanses for bid today is over. Try again tommorrow");
