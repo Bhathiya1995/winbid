@@ -297,6 +297,8 @@ class CampaignController extends Controller
 
 
     public function sendSmsForOne($msisdn, $message){
+        \Log::info("sendSmsForOne Start");
+
         IDEABIZ::generateAccessToken();
         $access_token = IDEABIZ::getAccessToken();
     
@@ -325,6 +327,8 @@ class CampaignController extends Controller
     ];
 
     $response = IDEABIZ::apiCall($url, $method, $headers, $request_body);
+    \Log::info("sendSmsForOne End");
+    \Log::info($response);
     }
 
     
