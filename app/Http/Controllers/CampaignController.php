@@ -107,10 +107,15 @@ class CampaignController extends Controller
         \Log::info("receivesms URL");
         \Log::info($request);
         $inboundSMSMessageNotification = $request->inboundSMSMessageNotification;
+        \Log::info($inboundSMSMessageNotification);
            $inboundSMSMessage = $inboundSMSMessageNotification['inboundSMSMessage'];
+           \Log::info($inboundSMSMessage);
            $senderAddress = $inboundSMSMessage['senderAddress'];
+           \Log::info($senderAddress);
            $message = $inboundSMSMessage['message'];
-           $words = explode(" ", $message);          
+           \Log::info($message);
+           $words = explode(" ", $message);
+           \Log::info($words);          
            \Log::info("Start receiveSms.");
            if($this->isSubscriber($senderAddress)){
             \Log::info("Start isSubscriber.");
