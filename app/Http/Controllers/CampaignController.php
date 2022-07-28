@@ -104,7 +104,7 @@ class CampaignController extends Controller
     }
 
     public function receiveSms(Request $request){
-        \Log::info("receivesms URL");
+        \Log::info("receivesms URL test changed");
         \Log::info($request);
         $inboundSMSMessageNotification = $request->inboundSMSMessageNotification;
         \Log::info($inboundSMSMessageNotification);
