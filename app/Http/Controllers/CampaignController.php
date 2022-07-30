@@ -216,7 +216,7 @@ class CampaignController extends Controller
     }
 
     public function receiveRegSms(Request $request){
-        \Log::info("receivesms URL");
+        \Log::info("receivesms URL testing eka");
         \Log::info($request);
     }
 
