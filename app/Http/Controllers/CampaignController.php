@@ -104,7 +104,32 @@ class CampaignController extends Controller
     }
 
     public function receiveSms(Request $request){
-        \Log::info("receivesms URL test changed");
+       
+    }
+
+    public function isSubscriber($tel_no){
+        IDEABIZ::generateAccessToken();
+        $access_token = IDEABIZ::getAccessToken();
+        $url = "https://ideabiz.lk/apicall/subscription/v3/status/tel%3A%2B{$tel_no}";
+        $method = "GET";
+        $headers = [
+                "Content-Type" => "application/json",
+                "Authorization" => "Bearer ".$access_token,
+                "Accept" => "application/json",
+        ];
+        $request_body = [];
+        $response = IDEABIZ::apiCall($url, $method, $headers, $request_body);
+        $body = $response->getBody();
+        $res = json_decode($body);
+        if($res->statusCode == "SUCCESS" AND $res->data->subscribeResponse->status == "SUBSCRIBED"){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    public function receiveRegSms(Request $request){
+        \Log::info("receivesms URL testing eka");
         \Log::info($request);
         $inboundSMSMessageNotification = $request->inboundSMSMessageNotification;
         \Log::info($inboundSMSMessageNotification);
@@ -192,32 +217,6 @@ class CampaignController extends Controller
                 }
                
            }
-    }
-
-    public function isSubscriber($tel_no){
-        IDEABIZ::generateAccessToken();
-        $access_token = IDEABIZ::getAccessToken();
-        $url = "https://ideabiz.lk/apicall/subscription/v3/status/tel%3A%2B{$tel_no}";
-        $method = "GET";
-        $headers = [
-                "Content-Type" => "application/json",
-                "Authorization" => "Bearer ".$access_token,
-                "Accept" => "application/json",
-        ];
-        $request_body = [];
-        $response = IDEABIZ::apiCall($url, $method, $headers, $request_body);
-        $body = $response->getBody();
-        $res = json_decode($body);
-        if($res->statusCode == "SUCCESS" AND $res->data->subscribeResponse->status == "SUBSCRIBED"){
-            return true;
-        }else{
-            return false;
-        }
-    }
-
-    public function receiveRegSms(Request $request){
-        \Log::info("receivesms URL testing eka");
-        \Log::info($request);
     }
 
 
