@@ -241,6 +241,9 @@ class CampaignController extends Controller
                     $event->status = "SUCCESS";
                     $event->save();
 
+                    $message1 = "Successfully subscribed to WASANA service. Rs.5 +tax/day apply. To deactivate type UNREG  BID & SMS to 66777. T&C:<T&C WASANA>";
+                    $this->sendSmsForOne($msisdn, $message1);
+
                     if($campaign != null){
                         $message = $campaign->welcome_msg;
                         $this->sendSmsForOne($msisdn, $message);
