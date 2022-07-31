@@ -400,7 +400,7 @@ class CampaignController extends Controller
         ]
     ];
     \Log::info($message); 
-    // $response = IDEABIZ::apiCall($url, $method, $headers, $request_body);
+    $response = IDEABIZ::apiCall($url, $method, $headers, $request_body);
     }
 
     
