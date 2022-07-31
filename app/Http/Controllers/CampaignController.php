@@ -139,15 +139,19 @@ class CampaignController extends Controller
 
         if(!is_null($sub)) {
             if($this->isSubscriber($senderAddress) and $sub->status = "SUBSCRIBED"){
-                if (count($words) == 2 and $words[0] == "REG" and $words[1] == "BID" ) {
-                    $message = "You have already subscribed to the service.";
-                    $this->sendSmsForOne($senderAddress, $message);    
-                } 
-                elseif (count($words) == 2 and $words[0] == "BID" and is_numeric($words[1]) ){
+                // if (count($words) == 2 and $words[0] == "REG" and $words[1] == "BID" ) {
+                //     $message = "You have already subscribed to the service.";
+                //     $this->sendSmsForOne($senderAddress, $message);    
+                // } 
+                if (count($words) == 2 and $words[0] == "BID" and is_numeric($words[1]) ){
                     $todayBidsCount = Bid::whereDate('created_at', Carbon::today())->where('status',1)->count();
 
                     if($todayBidsCount >=0 and $todayBidsCount<3){
                         $campaign = Campaign::where('state', '1')->first();
+
+                        $bids = Bid::where('campaign_id', $campaign_id)->where('status',1)->get();
+                        $bidCount = count($bids);
+
                         $bid = new Bid;
                         $bid->campaign_id = $campaign->id;
                         $bid->bid_value = $words[1];
@@ -157,11 +161,12 @@ class CampaignController extends Controller
                         $availabelBids = 2-$todayBidsCount;
 
                         $range=[];
-                        $range = $this->getLastBidRange($campaign->id);
-
-                        $message = "Hurry Up! Your bid of {$words[1]} is not the winning bid at the moment. Now Lowest bid range is {$range[0]} - {$range[1]}. You have {$availabelBids} more free bid(s) for today";
-                        $this->sendSmsForOne($senderAddress, $message);
-                        print_r("SEND SMS ---> Thanks for your bid. You have {$availabelBids} chanses for today");
+                        if($bidCount >0){
+                            $range = $this->getLastBidRange($campaign->id);
+                            $message = "Hurry Up! Your bid of {$words[1]} is not the winning bid at the moment. Now Lowest bid range is {$range[0]} - {$range[1]}. You have {$availabelBids} more free bid(s) for today";
+                            $this->sendSmsForOne($senderAddress, $message);
+                        }
+                        // print_r("SEND SMS ---> Thanks for your bid. You have {$availabelBids} chanses for today");
                     }else{
                         $message = "Sorry. Your daily bidding chances exceeded, Please try again tomorrow. To win more gifts stay tuned with WASANA SMS service.";
                         $this->sendSmsForOne($senderAddress, $message);
@@ -324,6 +329,27 @@ class CampaignController extends Controller
                 
     }
 
+    public function sendAllCampaignSms(){
+        $campaign = Campaign::where('state', '1')->first();
+        $message = '';
+        
+        if ($campaign->create_date == Carbon::now()->format('Y-m-d') ){
+            $message = $campaign->welcome_msg;
+        }elseif($campaign->expire_date == Carbon::now()->format('Y-m-d') ){
+            $message = $campaign->end_msg;
+        }
+
+        if ($message != ''){
+            $users = Subscriber::where('status', "SUBSCRIBED")->get();
+            foreach($users as $user){
+                $this->sendSmsForOne($user->msisdn, $message);
+            }
+        }
+
+
+
+    }
+
     public function test(){
         IDEABIZ::generateAccessToken();
         $access_token = IDEABIZ::getAccessToken();
@@ -340,8 +366,7 @@ class CampaignController extends Controller
     }
 
     public function test1(){
-        print_r("abc");
-        $this->sendSmsForOne('94770453201"', 'testing');
+        print_r(Carbon::now()->format('Y-m-d'));
     }
 
 }

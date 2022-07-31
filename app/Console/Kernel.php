@@ -25,6 +25,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->call('App\Http\Controllers\CampaignController@activateCamapign')->daily();
+        $schedule->call('App\Http\Controllers\CampaignController@sendAllCampaignSms')->dailyAt('07:00');
     }
 
     /**
