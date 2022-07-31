@@ -174,7 +174,7 @@ class CampaignController extends Controller
                     }
                     
                 }
-                else{
+                elseif($words[0] != "REG" or $words[0] != "UNREG"){
                     // print_r("SEND SMS ---> Message is invalid");
                     $message = "Sorry invalid BID Amount! Method of bidding is, type BID<space> BID VALUE and SMS to 66777";
                     $this->sendSmsForOne($senderAddress, $message);
