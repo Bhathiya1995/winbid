@@ -167,7 +167,6 @@ class CampaignController extends Controller
                         $this->sendSmsForOne($senderAddress, $message);
                         // print_r("SEND SMS ---> Your chanses for bid today is over. Try again tommorrow");
                     }
-
                     
                 }
                 else{
@@ -176,111 +175,7 @@ class CampaignController extends Controller
                     $this->sendSmsForOne($senderAddress, $message);
                 }
 
-            }elseif($this->isSubscriber($senderAddress) and $sub->status = "UNSUBSCRIBED"){
-
-                if (count($words) == 2 and $words[0] == "REG" and $words[1] == "BID" ) {
-                    $sub->status = "SUBSCRIBED";
-                    $saved = $sub->save();
-                
-                    if($saved){
-                        $event = new Event;
-                        $event->msisdn = $senderAddress;
-                        $event->trigger = "SYSTEM";
-                        $event->event = "SUBSCRIBE"; 
-                        $event->status = "SUCCESS";
-                        $event->save();
-                        $message = "Successfully subscribed to WASANA service. Rs.5 +tax/day apply. To deactivate type UNREG  BID & SMS to 66777. T&C:<T&C WASANA>";
-                        $this->sendSmsForOne($senderAddress, $message);
-                        
-                    }
-                }
-
-           }elseif(!$this->isSubscriber($senderAddress) and $sub->status = "SUBSCRIBED"){
-
-                if (count($words) == 2 and $words[0] == "UNREG" and $words[1] == "BID" ) {
-                    $sub->status = "UNSUBSCRIBED";
-                    $saved = $sub->save();
-                
-                    if($saved){
-
-                    Bid::where('tel_number', $senderAddress)->update(['status'=>0]);
-
-                    $event = new Event;
-                    $event->msisdn = $senderAddress;
-                    $event->trigger = "SYSTEM";
-                    $event->event = "UNSUBSCRIBE"; 
-                    $event->status = "SUCCESS";
-                    $event->save();
-
-                    $message = "You have successfully deactivate WINBID service.";
-                    $this->sendSmsForOne($senderAddress, $message);
-                    }
-
-                }              
-           }else {
-                if (count($words) == 2 and $words[0] == "REG" and $words[1] == "BID" ) {
-                    $subscriber = new Subscriber;
-                    $subscriber->msisdn = $senderAddress;
-                    $subscriber->subscribed_time = Carbon::now();
-                    $subscriber->status = "SUBSCRIBED";
-                    $saved = $subscriber->save();
-                    $campaign = Campaign::where('state', '1')->first();
-
-                    if($saved){
-                        $event = new Event;
-                        $event->msisdn = $senderAddress;
-                        $event->trigger = "SUBSCRIBER";
-                        $event->event = "SUBSCRIBE"; 
-                        $event->status = "SUCCESS";
-                        $event->save();
-
-                        $message = "Successfully subscribed to WASANA service. Rs.5 +tax/day apply. To deactivate type UNREG  BID & SMS to 66777. T&C:<T&C WASANA>";
-                        $this->sendSmsForOne($senderAddress, $message);
-                        
-                        if($campaign != null){
-                            $message = $campaign->welcome_msg;
-                            $this->sendSmsForOne($senderAddress, $message);
-                        }
-                        
-                    }
-                }else{
-                    // print_r("SEND SMS ---> You're not subscribed our service");
-                    $message = "You're not subscribed our service";
-                    print_r($message);
-                    $this->sendSmsForOne($senderAddress, $message);
-                }
-               
-           }
-        }else{
-            if ($this->isSubscriber($senderAddress) and is_null($sub)){
-
-                if (count($words) == 2 and $words[0] == "REG" and $words[1] == "BID" ) {
-                    $subscriber = new Subscriber;
-                    $subscriber->msisdn = $senderAddress;
-                    $subscriber->subscribed_time = Carbon::now();
-                    $subscriber->status = "SUBSCRIBED";
-                    $saved = $subscriber->save();
-                    $campaign = Campaign::where('state', '1')->first();
-
-                    if($saved){
-                        $event = new Event;
-                        $event->msisdn = $senderAddress;
-                        $event->trigger = "SUBSCRIBER";
-                        $event->event = "SUBSCRIBE"; 
-                        $event->status = "SUCCESS";
-                        $event->save();
-
-                        $message = "Successfully subscribed to WASANA service. Rs.5 +tax/day apply. To deactivate type UNREG  BID & SMS to 66777. T&C:<T&C WASANA>";
-                        $this->sendSmsForOne($senderAddress, $message);
-                        
-                        if($campaign != null){
-                            $message = $campaign->welcome_msg;
-                            $this->sendSmsForOne($senderAddress, $message);
-                        }
-                        
-                    }
-                }
-           }
+            }
         }
 
            
@@ -290,18 +185,17 @@ class CampaignController extends Controller
 
     public function admin(Request $request){
 
-        \Log::info("receiveRegsms URL");
+        \Log::info("admin URL");
         \Log::info($request);
         
         $status = $request->status;
         $action = $request->action;
-
         if($status== "SUBSCRIBED"){
-            $msisdn = $request->msisdn;
+            $telno = explode('+',$request->msisdn);
+            $msisdn = $telno[1];
         }else if($status= "UNSUBSCRIBED"){
-            $msisdn ="tel:+".$request->msisdn;
+            $msisdn =$request->msisdn;
         }
-        
         $serviceId = $request->serviceID;
 
         $sub = Subscriber::where('msisdn', "$msisdn")->first();
@@ -323,7 +217,10 @@ class CampaignController extends Controller
                     $event->event = "SUBSCRIBE"; 
                     $event->status = "SUCCESS";
                     $event->save();
-                    
+
+                    $message1 = "Successfully subscribed to WASANA service. Rs.5 +tax/day apply. To deactivate type UNREG  BID & SMS to 66777. T&C:<T&C WASANA>";
+                    $this->sendSmsForOne($msisdn, $message1);
+
                     if($campaign != null){
                         $message = $campaign->welcome_msg;
                         $this->sendSmsForOne($msisdn, $message);
@@ -331,9 +228,10 @@ class CampaignController extends Controller
                     
                 }
 
-            }else if($sub->status == "UNSUBSCRIBED"){
+            }else if($status== "SUBSCRIBED" and $sub->status == "UNSUBSCRIBED"){
                 $sub->subscribed_time = Carbon::now();
                 $sub->status = $status;
+
                 $saved = $sub->save();
                 if($saved){
                     $event = new Event;
@@ -357,6 +255,7 @@ class CampaignController extends Controller
                 $sub->status = $status;
                 $saved = $sub->save();
                 if($saved){
+                    Bid::where('tel_number', $msisdn)->update(['status'=>0]);
                     $event = new Event;
                     $event->msisdn = $msisdn;
                     $event->trigger = "SUBSCRIBER";
@@ -364,7 +263,6 @@ class CampaignController extends Controller
                     $event->status = "SUCCESS";
                     $event->save();
 
-                    print_r("Successfully unsubscribed");
                 }
             }
         }
