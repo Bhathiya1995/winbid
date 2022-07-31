@@ -89,7 +89,7 @@ class CampaignController extends Controller
     }
 
     public function getLastBidRange($campaign_id) {
-        $bids = Bid::where('campaign_id', $campaign_id)->orderBy('bid_value','ASC')->get();
+        $bids = Bid::where('campaign_id', $campaign_id)->where('status',1)->orderBy('bid_value','ASC')->get();
         foreach ($bids as $bid){
             $bid_val = $bid->bid_value;
             $bidCount = Bid::where([['campaign_id','=', $campaign_id],['bid_value','=',$bid_val]])->count();
@@ -129,29 +129,22 @@ class CampaignController extends Controller
     }
 
     public function receiveRegSms(Request $request){
-        \Log::info("receivesms URL testing eka");
-        \Log::info($request);
         $inboundSMSMessageNotification = $request->inboundSMSMessageNotification;
-        \Log::info($inboundSMSMessageNotification);
-           $inboundSMSMessage = $inboundSMSMessageNotification['inboundSMSMessage'];
-           \Log::info($inboundSMSMessage);
-           $senderAddress = $inboundSMSMessage['senderAddress'];
-           \Log::info($senderAddress);
-           $message = $inboundSMSMessage['message'];
-           \Log::info($message);
-           $words = explode(" ", $message);
-           \Log::info($words);          
-           \Log::info("Start receiveSms.");
-           if($this->isSubscriber($senderAddress)){
-            \Log::info("Start isSubscriber.");
+        $inboundSMSMessage = $inboundSMSMessageNotification['inboundSMSMessage'];
+        $senderAddress = $inboundSMSMessage['senderAddress'];
+        $message = $inboundSMSMessage['message'];
+        $words = explode(" ", $message);
+
+        $sub = Subscriber::where('msisdn', "$senderAddress")->first();
+
+        if(!is_null($sub)) {
+            if($this->isSubscriber($senderAddress) and $sub->status = "SUBSCRIBED"){
                 if (count($words) == 2 and $words[0] == "REG" and $words[1] == "BID" ) {
-                    \Log::info("You have already subscribed to the service.");
                     $message = "You have already subscribed to the service.";
                     $this->sendSmsForOne($senderAddress, $message);    
                 } 
                 elseif (count($words) == 2 and $words[0] == "BID" and is_numeric($words[1]) ){
-                    \Log::info("inside the bid");
-                    $todayBidsCount = Bid::whereDate('created_at', Carbon::today())->count();
+                    $todayBidsCount = Bid::whereDate('created_at', Carbon::today())->where('status',1)->count();
 
                     if($todayBidsCount >=0 and $todayBidsCount<3){
                         $campaign = Campaign::where('state', '1')->first();
@@ -159,7 +152,7 @@ class CampaignController extends Controller
                         $bid->campaign_id = $campaign->id;
                         $bid->bid_value = $words[1];
                         $bid->tel_number = $senderAddress;
-                        $bid->status = "0";
+                        $bid->status = "1";
                         $bid->save();
                         $availabelBids = 2-$todayBidsCount;
 
@@ -167,24 +160,64 @@ class CampaignController extends Controller
                         $range = $this->getLastBidRange($campaign->id);
 
                         $message = "Hurry Up! Your bid of {$words[1]} is not the winning bid at the moment. Now Lowest bid range is {$range[0]} - {$range[1]}. You have {$availabelBids} more free bid(s) for today";
-                        \Log::info(" Thanks for your bid.");
                         $this->sendSmsForOne($senderAddress, $message);
                         print_r("SEND SMS ---> Thanks for your bid. You have {$availabelBids} chanses for today");
                     }else{
-                        \Log::info("Sorry. Your daily bidding chances exceede");
                         $message = "Sorry. Your daily bidding chances exceeded, Please try again tomorrow. To win more gifts stay tuned with WASANA SMS service.";
                         $this->sendSmsForOne($senderAddress, $message);
                         // print_r("SEND SMS ---> Your chanses for bid today is over. Try again tommorrow");
                     }
 
                     
-                }else{
+                }
+                else{
                     // print_r("SEND SMS ---> Message is invalid");
                     $message = "Sorry invalid BID Amount! Method of bidding is, type BID<space> BID VALUE and SMS to 66777";
                     $this->sendSmsForOne($senderAddress, $message);
                 }
+
+            }elseif($this->isSubscriber($senderAddress) and $sub->status = "UNSUBSCRIBED"){
+
+                if (count($words) == 2 and $words[0] == "REG" and $words[1] == "BID" ) {
+                    $sub->status = "SUBSCRIBED";
+                    $saved = $sub->save();
+                
+                    if($saved){
+                        $event = new Event;
+                        $event->msisdn = $senderAddress;
+                        $event->trigger = "SYSTEM";
+                        $event->event = "SUBSCRIBE"; 
+                        $event->status = "SUCCESS";
+                        $event->save();
+                        $message = "Successfully subscribed to WASANA service. Rs.5 +tax/day apply. To deactivate type UNREG  BID & SMS to 66777. T&C:<T&C WASANA>";
+                        $this->sendSmsForOne($senderAddress, $message);
+                        
+                    }
+                }
+
+           }elseif(!$this->isSubscriber($senderAddress) and $sub->status = "SUBSCRIBED"){
+
+                if (count($words) == 2 and $words[0] == "UNREG" and $words[1] == "BID" ) {
+                    $sub->status = "UNSUBSCRIBED";
+                    $saved = $sub->save();
+                
+                    if($saved){
+
+                    Bid::where('tel_number', $senderAddress)->update(['status'=>0]);
+
+                    $event = new Event;
+                    $event->msisdn = $senderAddress;
+                    $event->trigger = "SYSTEM";
+                    $event->event = "UNSUBSCRIBE"; 
+                    $event->status = "SUCCESS";
+                    $event->save();
+
+                    $message = "You have successfully deactivate WINBID service.";
+                    $this->sendSmsForOne($senderAddress, $message);
+                    }
+
+                }              
            }else {
-            print_r($words);
                 if (count($words) == 2 and $words[0] == "REG" and $words[1] == "BID" ) {
                     $subscriber = new Subscriber;
                     $subscriber->msisdn = $senderAddress;
@@ -213,10 +246,44 @@ class CampaignController extends Controller
                 }else{
                     // print_r("SEND SMS ---> You're not subscribed our service");
                     $message = "You're not subscribed our service";
+                    print_r($message);
                     $this->sendSmsForOne($senderAddress, $message);
                 }
                
            }
+        }else{
+            if ($this->isSubscriber($senderAddress) and is_null($sub)){
+
+                if (count($words) == 2 and $words[0] == "REG" and $words[1] == "BID" ) {
+                    $subscriber = new Subscriber;
+                    $subscriber->msisdn = $senderAddress;
+                    $subscriber->subscribed_time = Carbon::now();
+                    $subscriber->status = "SUBSCRIBED";
+                    $saved = $subscriber->save();
+                    $campaign = Campaign::where('state', '1')->first();
+
+                    if($saved){
+                        $event = new Event;
+                        $event->msisdn = $senderAddress;
+                        $event->trigger = "SUBSCRIBER";
+                        $event->event = "SUBSCRIBE"; 
+                        $event->status = "SUCCESS";
+                        $event->save();
+
+                        $message = "Successfully subscribed to WASANA service. Rs.5 +tax/day apply. To deactivate type UNREG  BID & SMS to 66777. T&C:<T&C WASANA>";
+                        $this->sendSmsForOne($senderAddress, $message);
+                        
+                        if($campaign != null){
+                            $message = $campaign->welcome_msg;
+                            $this->sendSmsForOne($senderAddress, $message);
+                        }
+                        
+                    }
+                }
+           }
+        }
+
+           
     }
 
 
@@ -306,8 +373,6 @@ class CampaignController extends Controller
 
 
     public function sendSmsForOne($msisdn, $message){
-        \Log::info("sendSmsForOne Start");
-
         IDEABIZ::generateAccessToken();
         $access_token = IDEABIZ::getAccessToken();
     
@@ -334,10 +399,8 @@ class CampaignController extends Controller
         
         ]
     ];
-
-    $response = IDEABIZ::apiCall($url, $method, $headers, $request_body);
-    \Log::info("sendSmsForOne End");
-    \Log::info($response);
+    \Log::info($message); 
+    // $response = IDEABIZ::apiCall($url, $method, $headers, $request_body);
     }
 
     
@@ -377,7 +440,7 @@ class CampaignController extends Controller
 
     public function test1(){
         print_r("abc");
-        $this->getLastBidRange(1);
+        $this->sendSmsForOne('94770453201"', 'testing');
     }
 
 }
