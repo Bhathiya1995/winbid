@@ -33,11 +33,12 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function(){
     Route::match(['GET','POST'],'/dashboard/winner', [CampaignController::class, 'winner']);
     Route::get('/dashboard/editCampaignPage/{id}',[CampaignController::class, 'editCampaignPage']);
     Route::post('/dashboard/updateCampaignPage/{id}',[CampaignController::class, 'updateCampaign']);
-    Route::get('/dashboard/customMessage/',[CustomMessageController::class, 'customMessagePage']);
-    Route::post('/dashboard/newCustomMessage',[CustomMessageController::class, 'newCustomMessage']);
+    Route::get('/dashboard/customMessage/',[CampaignController::class, 'customMessagePage']);
+    Route::post('/dashboard/newCustomMessage',[CampaignController::class, 'newCustomMessage']);
 
 });
 
+Route::get('/terms', [CampaignController::class, 'terms']);
 Route::get('/test', [CampaignController::class, 'test']);
 Route::get('/test1', [CampaignController::class, 'test1']);
 Route::post('/receiveRegsms', [CampaignController::class, 'receiveRegsms']);

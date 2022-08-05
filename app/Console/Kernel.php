@@ -26,6 +26,8 @@ class Kernel extends ConsoleKernel
     {
         $schedule->call('App\Http\Controllers\CampaignController@activateCamapign')->daily();
         $schedule->call('App\Http\Controllers\CampaignController@sendAllCampaignSms')->dailyAt('07:00');
+        $schedule->call('App\Http\Controllers\CampaignController@dailyPayments')->dailyAt('00:01');
+        $schedule->call('App\Http\Controllers\CampaignController@renew')->hourlyAt(55);
     }
 
     /**

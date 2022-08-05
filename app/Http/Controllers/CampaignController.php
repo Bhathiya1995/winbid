@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Campaign;
 use App\Models\Bid;
+use App\Models\CustomMessage;
 use App\Models\Subscriber;
 use IDEABIZ;
 use Carbon\Carbon;
 use App\Models\Event;
+use Illuminate\Cache\RateLimiter;
 
 class CampaignController extends Controller
 {
@@ -22,6 +24,10 @@ class CampaignController extends Controller
         }
         $allCampaigns = Campaign::all();
         return view('dashboard')->with('campaigns', $campaigns)->with('allCampaigns',$allCampaigns);
+    }
+
+    public function terms(){
+        return view('pages.terms');
     }
 
     public function winner(Request $req){
@@ -58,6 +64,26 @@ class CampaignController extends Controller
         
         // return view('pages.winnerpage')->with('allCampaigns',$allCampaigns)->with('winner', $winner)->with('allUniqueWinners',$allUniqueWinners);
     }
+
+    public function customMessagePage(){
+        $customMessages =CustomMessage::all();
+        return view('pages.custommessagepage')->with('customMessages', $customMessages);
+    }
+
+    public function newCustomMessage(Request $req){
+        $customMessage = new CustomMessage();
+        $customMessage->custom_message = $req->customMsg;
+        $customMessage->status = "1";
+        $customMessage->save();
+
+        $users = Subscriber::where('status', "SUBSCRIBED")->get();
+        foreach($users as $user){
+            $this->sendSmsForOne($user->msisdn, $req->customMsg);
+        }
+
+        return redirect()->back()->with('success', 'Message sent !!');   
+    }
+
 
     
     public function createCampaign(Request $req){
@@ -129,6 +155,8 @@ class CampaignController extends Controller
     }
 
     public function receiveRegSms(Request $request){
+        \Log::info('receiveRegSms');
+        \Log::info($request);
         $inboundSMSMessageNotification = $request->inboundSMSMessageNotification;
         $inboundSMSMessage = $inboundSMSMessageNotification['inboundSMSMessage'];
         $senderAddress = $inboundSMSMessage['senderAddress'];
@@ -138,7 +166,7 @@ class CampaignController extends Controller
         $sub = Subscriber::where('msisdn', "$senderAddress")->first();
 
         if(!is_null($sub)) {
-            if($this->isSubscriber($senderAddress) and $sub->status = "SUBSCRIBED"){
+            if($this->isSubscriber($senderAddress) and $sub->status = "SUBSCRIBED" and $sub->paid = "PAID"){
                 // if (count($words) == 2 and $words[0] == "REG" and $words[1] == "BID" ) {
                 //     $message = "You have already subscribed to the service.";
                 //     $this->sendSmsForOne($senderAddress, $message);    
@@ -174,7 +202,7 @@ class CampaignController extends Controller
                     }
                     
                 }
-                elseif($words[0] != "REG" or $words[0] != "UNREG"){
+                elseif(($words[0] != "REG" or $words[0] != "UNREG") and $sub->paid = "PAID"){
                     // print_r("SEND SMS ---> Message is invalid");
                     $message = "Sorry invalid BID Amount! Method of bidding is, type BID<space> BID VALUE and SMS to 66777";
                     $this->sendSmsForOne($senderAddress, $message);
@@ -192,93 +220,258 @@ class CampaignController extends Controller
 
         \Log::info("admin URL");
         \Log::info($request);
-        
-        $status = $request->status;
-        $action = $request->action;
-        if($status== "SUBSCRIBED"){
-            $telno = explode('+',$request->msisdn);
-            $msisdn = $telno[1];
-        }else if($status= "UNSUBSCRIBED"){
-            $msisdn =$request->msisdn;
-        }
-        $serviceId = $request->serviceID;
 
-        $sub = Subscriber::where('msisdn', "$msisdn")->first();
-        
-        if($action == "STATE_CHANGE" and $status== "SUBSCRIBED"){
-            $campaign = Campaign::where('state', '1')->first();
-            
-            if($sub == null){
-                $subscriber = new Subscriber;
-                $subscriber->msisdn = $msisdn;
-                $subscriber->subscribed_time = Carbon::now();
-                $subscriber->status = $status;
-                $saved = $subscriber->save();
+        if($request->status != null ){
 
-                if($saved){
-                    $event = new Event;
-                    $event->msisdn = $msisdn;
-                    $event->trigger = "SUBSCRIBER";
-                    $event->event = "SUBSCRIBE"; 
-                    $event->status = "SUCCESS";
-                    $event->save();
+            $status = $request->status;
+            $action = $request->action;
+            if($status== "SUBSCRIBED"){
+                $telno = explode('+',$request->msisdn);
+                $msisdn = $telno[1];
+            }else if($status= "UNSUBSCRIBED"){
+                $msisdn =$request->msisdn;
+            }
+            $serviceId = $request->serviceID;
 
-                    $message1 = "Successfully subscribed to WASANA service. Rs.5 +tax/day apply. To deactivate type UNREG  BID & SMS to 66777. T&C:<T&C WASANA>";
-                    $this->sendSmsForOne($msisdn, $message1);
+            $sub = Subscriber::where('msisdn', "$msisdn")->first();
 
-                    if($campaign != null){
-                        $message = $campaign->welcome_msg;
-                        $this->sendSmsForOne($msisdn, $message);
+            if($action == "STATE_CHANGE" and $status== "SUBSCRIBED"){
+                $campaign = Campaign::where('state', '1')->first();
+                
+                if($sub == null){
+                    $subscriber = new Subscriber;
+                    $subscriber->msisdn = $msisdn;
+                    $subscriber->subscribed_time = Carbon::now();
+                    $subscriber->status = $status;
+                    $saved = $subscriber->save();
+    
+                    if($saved){
+                        $event = new Event;
+                        $event->msisdn = $msisdn;
+                        $event->trigger = "SUBSCRIBER";
+                        $event->event = "SUBSCRIBE"; 
+                        $event->status = "SUCCESS";
+                        $event->save();
+    
+                        $message1 = "Successfully subscribed to WASANA service. Rs.5 +tax/day apply. To deactivate type UNREG  BID & SMS to 66777. T&C:<T&C WASANA>";
+                        $this->sendSmsForOne($msisdn, $message1);
+
+                        $payRes = $this->payment($msisdn);
+                        $body = $payRes->getBody();
+                        $res = json_decode($body);
+                        if(isset($res->requestError)){
+                            $subscriber->paid = 'NOTPAID';
+                            $saved = $subscriber->save();
+
+                            $event = new Event;
+                            $event->msisdn = $msisdn;
+                            $event->trigger = "SYSTEM";
+                            $event->event = "CHARGING"; 
+                            $event->status = "FAILED";
+                            $event->save();
+                        }elseif (isset($res->amountTransaction) and $res->amountTransaction->transactionOperationStatus == 'Charged'){
+                            $subscriber->paid = 'PAID';
+                            $saved = $subscriber->save();
+
+                            $event = new Event;
+                            $event->msisdn = $msisdn;
+                            $event->trigger = "SYSTEM";
+                            $event->event = "CHARGING"; 
+                            $event->status = "SUCCESS";
+                            $event->save();
+                        }
+
+    
+                        if($campaign != null){
+                            $message = $campaign->welcome_msg;
+                            $this->sendSmsForOne($msisdn, $message);
+                        }
+                        
+                    }else{
+                        $event = new Event;
+                        $event->msisdn = $msisdn;
+                        $event->trigger = "SUBSCRIBER";
+                        $event->event = "SUBSCRIBE"; 
+                        $event->status = "FAILED";
+                        $event->save();
+                    }
+    
+                }else if($status== "SUBSCRIBED" and $sub->status == "UNSUBSCRIBED"){
+                    $sub->subscribed_time = Carbon::now();
+                    $sub->status = $status;
+    
+                    $saved = $sub->save();
+                    if($saved){
+                        $event = new Event;
+                        $event->msisdn = $msisdn;
+                        $event->trigger = "SUBSCRIBER";
+                        $event->event = "SUBSCRIBE"; 
+                        $event->status = "SUCCESS";
+                        $event->save();
+    
+                        $message1 = "Successfully subscribed to WINBID service. Rs.5 +tax/day apply. To deactivate type UNREG  BID & SMS to 66777. T&C:<T&C WASANA>";
+                        $this->sendSmsForOne($msisdn, $message1);
+
+                        $payRes = $this->payment($msisdn);
+                        $body = $payRes->getBody();
+                        $res = json_decode($body);
+                        if(isset($res->requestError)){
+                            $subscriber->paid = 'NOTPAID';
+                            $saved = $subscriber->save();
+
+                            $event = new Event;
+                            $event->msisdn = $msisdn;
+                            $event->trigger = "SYSTEM";
+                            $event->event = "CHARGING"; 
+                            $event->status = "FAILED";
+                            $event->save();
+                        }elseif (isset($res->amountTransaction) and $res->amountTransaction->transactionOperationStatus == 'Charged'){
+                            $subscriber->paid = 'PAID';
+                            $saved = $subscriber->save();
+
+                            $event = new Event;
+                            $event->msisdn = $msisdn;
+                            $event->trigger = "SYSTEM";
+                            $event->event = "CHARGING"; 
+                            $event->status = "SUCCESS";
+                            $event->save();
+                        }
+
+    
+                        if($campaign != null){
+                            $message = $campaign->welcome_msg;
+                            $this->sendSmsForOne($msisdn, $message);
+                        }
                     }
                     
                 }
+                
+            } else if($action == "STATE_CHANGE" and $status= "UNSUBSCRIBED"){
+                if ($sub != null and $sub->status == "SUBSCRIBED"){
+                    $sub->unsubscribed_time = Carbon::now();
+                    $sub->status = $status;
+                    $saved = $sub->save();
+                    if($saved){
+                        Bid::where('tel_number', $msisdn)->update(['status'=>0]);
+                        $event = new Event;
+                        $event->msisdn = $msisdn;
+                        $event->trigger = "SUBSCRIBER";
+                        $event->event = "UNSUBSCRIBE"; 
+                        $event->status = "SUCCESS";
+                        $event->save();
 
-            }else if($status== "SUBSCRIBED" and $sub->status == "UNSUBSCRIBED"){
-                $sub->subscribed_time = Carbon::now();
-                $sub->status = $status;
-
-                $saved = $sub->save();
-                if($saved){
-                    $event = new Event;
-                    $event->msisdn = $msisdn;
-                    $event->trigger = "SUBSCRIBER";
-                    $event->event = "SUBSCRIBE"; 
-                    $event->status = "SUCCESS";
-                    $event->save();
-
-                    $message1 = "Successfully subscribed to WASANA service. Rs.5 +tax/day apply. To deactivate type UNREG  BID & SMS to 66777. T&C:<T&C WASANA>";
-                    $this->sendSmsForOne($msisdn, $message1);
-
-                    if($campaign != null){
-                        $message = $campaign->welcome_msg;
+                        $message = "You are successfully Deactivated the WINBID Service. Thank you for using WINBID SMS service. To Activate the WINBID service type REG BID & SMS to 66777";
                         $this->sendSmsForOne($msisdn, $message);
+    
+                    }else{
+                        $event = new Event;
+                        $event->msisdn = $msisdn;
+                        $event->trigger = "SUBSCRIBER";
+                        $event->event = "UNSUBSCRIBE"; 
+                        $event->status = "FAILED";
+                        $event->save();
                     }
                 }
-                
             }
             
-        } else if($action == "STATE_CHANGE" and $status= "UNSUBSCRIBED"){
-            if ($sub != null and $sub->status == "SUBSCRIBED"){
-                $sub->unsubscribed_time = Carbon::now();
-                $sub->status = $status;
-                $saved = $sub->save();
-                if($saved){
-                    Bid::where('tel_number', $msisdn)->update(['status'=>0]);
-                    $event = new Event;
-                    $event->msisdn = $msisdn;
-                    $event->trigger = "SUBSCRIBER";
-                    $event->event = "UNSUBSCRIBE"; 
-                    $event->status = "SUCCESS";
-                    $event->save();
 
+        }elseif($request->status == null){
+             $action = $request->action;
+             $msisdn = $request->msisdn;
+             $sub = Subscriber::where('msisdn', $msisdn)->first();
+             $events = Event::where('msisdn', $msisdn)->orderBy('created_at', 'desc')->get();
+             $appId = '5dc483bc-a038-4d7d-adb0-b5c07ebd58c9';
+             $serviceId = 'dc24fcb5-9fa3-4bdc-8c7f-b237bdacbbf2';
+
+             $subEvent = $events->where('event','SUBSCRIBE')->first();
+             $unsubEvent = $events->where('event','UNSUBSCRIBE')->first();
+             $currentEvent = $events->first();
+
+             if ($action == 'STATE_CHECK'){
+                if($unsubEvent != null) {
+                    $unsubRes = [
+                            'datetime' => $unsubEvent->created_at->format('Y-m-d H:i:s'),
+                            'method' => 'SMS'
+                            ];
+                }else{
+                    $unsubRes = null;
                 }
-            }
+                $res = ['statusCode'=>'Success',
+                      'message' => '',
+                      'data' => [
+                            'subscription' => [
+                                'msisdn' => $msisdn,
+                                'appID' => $appId,
+                                'serviceID' => $serviceId,
+                                'registration-log' => [
+                                    'datetime' => $subEvent->created_at->format('Y-m-d H:i:s'),
+                                    'method' => 'SMS'
+                                    ],
+                                'unregistration-log' => $unsubRes,
+                                'status' => $currentEvent->event
+                                
+                                ]
+                            ]  
+                    ];
+                return response()->json($res);
+
+             }elseif($action == 'HISTORY'){
+                $offset = $request->offset;
+                $limit = $request->limit;
+                $limitEvents = $events->take($limit);
+                $historyRes =array();
+
+                foreach($limitEvents as $event){
+                    if ($event->note != null){
+                        $noteRes = $event->note ;
+                    }else{
+                        $noteRes = '';
+                    }
+                   $historyRes[] = [
+                        'datetime' => $event->created_at->format('Y-m-d H:i:s'),
+                        'trigger' => $event->trigger,
+                        'event' => $event->event,
+                        'note' => $noteRes,
+                        'status' => $event->status,
+                        'content' => $event->content,
+                        'serviceID' => $serviceId
+                   ];
+                }
+
+                $res = [
+                    'subscriberHistory' => [
+                        'msisdn' => $msisdn,
+                        'appID' => $appId,
+                        'serviceID' => $serviceId,
+                        'offset' => $offset,
+                        'limit' => $limit,
+                        'history'=> $historyRes
+                    ]
+                ];
+
+                return response()->json($res);
+
+             }
         }
+        
+        
+        
+        
+        
         
     }
 
 
     public function sendSmsForOne($msisdn, $message){
+
+        if ($this->hasTooManyRequests()) {
+            sleep(
+                $this->limiter()->availableIn($this->throttleKey()) + 1 // <= optional plus 1 sec to be on safe side
+            );      
+            return $this->sendSmsForOne($msisdn, $message);
+        }
+
+
         IDEABIZ::generateAccessToken();
         $access_token = IDEABIZ::getAccessToken();
     
@@ -307,7 +500,50 @@ class CampaignController extends Controller
     ];
     \Log::info($message); 
     $response = IDEABIZ::apiCall($url, $method, $headers, $request_body);
+
+    $body = $response->getBody();
+    $res = json_decode($body);
+    if(isset($res->fault)){
+        $event = new Event;
+        $event->msisdn = $msisdn;
+        $event->trigger = "SYSTEM";
+        $event->event = "SMS"; 
+        $event->status = "FAILED";
+        $event->content = $message;
+        $event->save();
+    }else{
+        $event = new Event;
+        $event->msisdn = $msisdn;
+        $event->trigger = "SYSTEM";
+        $event->event = "SMS"; 
+        $event->status = "SUCCESS";
+        $event->content = $message;
+        $event->save();
     }
+
+    $this->limiter()->hit(
+        $this->throttleKey(),60
+    );
+
+    }
+
+    protected function hasTooManyRequests()
+        {
+            return $this->limiter()->tooManyAttempts(
+                $this->throttleKey(), 300 // <= max attempts per minute
+            );
+        }
+
+    protected function limiter()
+        {
+            return app(RateLimiter::class);
+        }
+
+    protected function throttleKey()
+        {
+            return '1';
+        }
+
 
     
 
@@ -315,6 +551,7 @@ class CampaignController extends Controller
             $currentDate = Carbon::now()->format('Y-m-d');
             $campaign = Campaign::where('create_date','<=',$currentDate)->where('expire_date','>=',$currentDate)->first(); 
             if($campaign ==null){
+                print_r('$campaign');
                 Campaign::where('state','=','1')->update(['state'=>0]);
             }elseif($campaign->state == 0){
                 Campaign::where('state','=','1')->update(['state'=>0]);
@@ -329,26 +566,83 @@ class CampaignController extends Controller
                 
     }
 
+    public function dailyPayments(){
+        $users = Subscriber::where('status', "SUBSCRIBED")->get();
+            foreach($users as $user){
+                $payRes = $this->payment($user->msisdn);
+                $body = $payRes->getBody();
+                $res = json_decode($body);
+                if(isset($res->requestError)){
+                    $subscriber->paid = 'NOTPAID';
+                    $saved = $subscriber->save();
+
+                    $event = new Event;
+                    $event->msisdn = $msisdn;
+                    $event->trigger = "SYSTEM";
+                    $event->event = "CHARGING"; 
+                    $event->status = "FAILED";
+                    $event->save();
+                }elseif (isset($res->amountTransaction) and $res->amountTransaction->transactionOperationStatus == 'Charged'){
+                    $subscriber->paid = 'PAID';
+                    $saved = $subscriber->save();
+
+                    $event = new Event;
+                    $event->msisdn = $msisdn;
+                    $event->trigger = "SYSTEM";
+                    $event->event = "CHARGING"; 
+                    $event->status = "SUCCESS";
+                    $event->save();
+                }        
+            }
+    }
+
+    public function renew(){
+        $users = Subscriber::where('status', "SUBSCRIBED")->where('paid'. 'NOTPAID')->get();
+        foreach($users as $user){
+            $payRes = $this->payment($user->msisdn);
+            $body = $payRes->getBody();
+            $res = json_decode($body);
+            if(isset($res->requestError)){
+                $event = new Event;
+                $event->msisdn = $msisdn;
+                $event->trigger = "SYSTEM";
+                $event->event = "CHARGING"; 
+                $event->status = "FAILED";
+                $event->save();
+            }elseif (isset($res->amountTransaction) and $res->amountTransaction->transactionOperationStatus == 'Charged'){
+                $subscriber->paid = 'PAID';
+                $saved = $subscriber->save();
+
+                $event = new Event;
+                $event->msisdn = $msisdn;
+                $event->trigger = "SYSTEM";
+                $event->event = "CHARGING"; 
+                $event->status = "SUCCESS";
+                $event->save();
+            }        
+        }
+    }
+
     public function sendAllCampaignSms(){
         $campaign = Campaign::where('state', '1')->first();
         $message = '';
-        
-        if ($campaign->create_date == Carbon::now()->format('Y-m-d') ){
-            $message = $campaign->welcome_msg;
-        }elseif($campaign->expire_date == Carbon::now()->format('Y-m-d') ){
-            $message = $campaign->end_msg;
+
+        if($campaign ==null){
+            if ($campaign->create_date == Carbon::now()->format('Y-m-d') ){
+                $message = $campaign->welcome_msg;
+            }elseif($campaign->expire_date == Carbon::now()->format('Y-m-d') ){
+                $message = $campaign->end_msg;
+            }
         }
 
         if ($message != ''){
-            $users = Subscriber::where('status', "SUBSCRIBED")->get();
+            $users = Subscriber::where('status', "SUBSCRIBED")->where('paid', 'PAID')->get();
             foreach($users as $user){
                 $this->sendSmsForOne($user->msisdn, $message);
             }
         }
-
-
-
     }
+
 
     public function test(){
         IDEABIZ::generateAccessToken();
@@ -366,7 +660,101 @@ class CampaignController extends Controller
     }
 
     public function test1(){
-        print_r(Carbon::now()->format('Y-m-d'));
+        // $this->activateCamapign();
+
+        $this->sendSmsForOne('94770453201', 'test laravel');
+
+        // $response = $this->payment("94770453201");
+        // $body = $response->getBody();
+        // $res = json_decode($body);
+        // print_r($res->amountTransaction->transactionOperationStatus);
+
+        // $this->checkBalance("94770453201");
+
+        // print_r($res);
+        // if ($response->requestError != null){
+        //     print_r("Charging failed");
+        // }else{
+        //     print_r("Chargin passed0");
+        // }
     }
+
+    public function payment($msisdn){
+
+        if ($this->hasTooManyRequests()) {
+            sleep(
+                $this->limiter()->availableIn($this->throttleKey()) + 1 // <= optional plus 1 sec to be on safe side
+            );      
+            return $this->sendSmsForOne($msisdn, $message);
+        }
+
+        IDEABIZ::generateAccessToken();
+        $access_token = IDEABIZ::getAccessToken();
+        $url = "https://ideabiz.lk/apicall/payment/v4/{$msisdn}/transactions/amount";        
+        $method = "POST";
+        $headers = [
+            "Content-Type" => "application/json;charset=UTF-8",
+            "Authorization" => "Bearer ".$access_token,
+            "Accept" => "application/json",
+        ];
+        $request_body = [
+            "amountTransaction" =>[
+                "clientCorrelator"=> '{$msisdn}',
+                "endUserId"=>"tel:+".$msisdn,
+                "paymentAmount"=> [
+                    "chargingInformation"=> [
+                        "amount"=>1,
+                        "currency"=>"LKR",
+                        "description"=> "Subscriberd charges for WinBid Service"
+                    ],
+                    "chargingMetaData"=> [
+                        "onBehalfOf"=> "IdeaBiz Test",
+                        "purchaseCategoryCode"=> "Service",
+                        "channel"=> "WAP",
+                        "taxAmount"=> "0",
+                        "serviceID"=> "dc24fcb5-9fa3-4bdc-8c7f-b237bdacbbf2"
+                    ]
+                ],
+                "referenceCode"=> "REF-12345",
+                "transactionOperationStatus"=> "Charged"
+            ]
+        ];
+        $response = IDEABIZ::apiCall($url, $method, $headers, $request_body);
+        return $response;
+
+        $this->limiter()->hit(
+            $this->throttleKey(),60
+        );
+
+
+    }
+
+    public function checkBalance($msisdn){
+
+        if ($this->hasTooManyRequests()) {
+            sleep(
+                $this->limiter()->availableIn($this->throttleKey()) + 1 // <= optional plus 1 sec to be on safe side
+            );      
+            return $this->sendSmsForOne($msisdn, $message);
+        }
+
+        IDEABIZ::generateAccessToken();
+        $access_token = IDEABIZ::getAccessToken();
+        $url = "https://ideabiz.lk/apicall/balancecheck/v4/{$msisdn}/transactions/amount/balance";  
+        $method = "GET";
+        $headers = [
+            "Content-Type" => "application/json;charset=UTF-8",
+            "Authorization" => "Bearer ".$access_token,
+            "Accept" => "application/json",
+        ];
+        $request_body = [];
+        $response = IDEABIZ::apiCall($url, $method, $headers, $request_body);
+        return $response;
+
+        $this->limiter()->hit(
+            $this->throttleKey(),60
+        );
+    }
+
 
 }

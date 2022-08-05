@@ -20,7 +20,7 @@
                     <button type="submit" class="btn btn-primary mt-3">Send</button>
 
                     @isset($customMessages)
-                        <h3 class="mt-3">Winner</h3>
+                        <h3 class="mt-3">Custom Message</h3>
                         <table class="table table-bordered table-striped table-success mt-3">
                             <thead class="thead-dark">
                                 <th>ID</th>
@@ -43,29 +43,6 @@
                         </table>
                     @endisset
 
-                    @isset($allUniqueWinners)
-                        <h3>All Winners</h3>
-                        <table class="table table-bordered table-striped table-dark mt-3">
-                            <thead class="thead-dark">
-                                <th>ID</th>
-                                <th>Bid Value</th>
-                                <th>Tel-Numebr</th>
-                                <th>Status</th>
-                            </thead>
-                            <tbody>
-                                    @foreach($allUniqueWinners as $allwinner)
-                                    <tr>
-                                        <td>{{$allwinner->bid_value}}</td>
-                                        <td>{{$allwinner->id}}</td>
-                                        <td>{{$allwinner->tel_number}}</td>
-                                        <td>{{$allwinner->status == "1" ? 'active': 'deactive'}}</td>
-                                      </tr>
-                                    @endforeach
-
-                            </tbody>
-                        </table>
-
-                    @endisset
                    
                 </div>
             </form>
