@@ -572,9 +572,12 @@ class CampaignController extends Controller
                 $payRes = $this->payment($user->msisdn);
                 $body = $payRes->getBody();
                 $res = json_decode($body);
+                \Log::info('dailyPayments');
+                \Log::info($res);
                 if(isset($res->requestError)){
-                    $subscriber->paid = 'NOTPAID';
-                    $saved = $subscriber->save();
+                    $sub = Subscriber::where('msisdn', $user->msisdn)->first();
+                    $sub->paid = 'NOTPAID';
+                    $saved = $sub->save();
 
                     $event = new Event;
                     $event->msisdn = $msisdn;
@@ -583,8 +586,9 @@ class CampaignController extends Controller
                     $event->status = "FAILED";
                     $event->save();
                 }elseif (isset($res->amountTransaction) and $res->amountTransaction->transactionOperationStatus == 'Charged'){
-                    $subscriber->paid = 'PAID';
-                    $saved = $subscriber->save();
+                    $sub = Subscriber::where('msisdn', $user->msisdn)->first();
+                    $sub->paid = 'PAID';
+                    $saved = $sub->save();
 
                     $event = new Event;
                     $event->msisdn = $msisdn;
@@ -597,24 +601,25 @@ class CampaignController extends Controller
     }
 
     public function renew(){
-        $users = Subscriber::where('status', "SUBSCRIBED")->where('paid'. 'NOTPAID')->get();
+        $users = Subscriber::where('status', "SUBSCRIBED")->where('paid', 'NOTPAID')->get();
         foreach($users as $user){
             $payRes = $this->payment($user->msisdn);
             $body = $payRes->getBody();
             $res = json_decode($body);
             if(isset($res->requestError)){
                 $event = new Event;
-                $event->msisdn = $msisdn;
+                $event->msisdn = $user->msisdn;
                 $event->trigger = "SYSTEM";
                 $event->event = "CHARGING"; 
                 $event->status = "FAILED";
                 $event->save();
             }elseif (isset($res->amountTransaction) and $res->amountTransaction->transactionOperationStatus == 'Charged'){
-                $subscriber->paid = 'PAID';
-                $saved = $subscriber->save();
+                $sub = Subscriber::where('msisdn', $user->msisdn)->first();
+                $sub->paid = 'PAID';
+                $saved = $sub->save();
 
                 $event = new Event;
-                $event->msisdn = $msisdn;
+                $event->msisdn = $user->msisdn;
                 $event->trigger = "SYSTEM";
                 $event->event = "CHARGING"; 
                 $event->status = "SUCCESS";
