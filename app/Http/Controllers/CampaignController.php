@@ -601,13 +601,15 @@ class CampaignController extends Controller
     }
 
     public function renew(){
-        \Log::info('renew');
+        
         $users = Subscriber::where('status', "SUBSCRIBED")->where('paid', 'NOTPAID')->get();
         foreach($users as $user){
             $payRes = $this->payment($user->msisdn);
             $body = $payRes->getBody();
             $res = json_decode($body);
             if(isset($res->requestError)){
+                \Log::info('charge error');
+                \Log::info($res->requestError);
                 $event = new Event;
                 $event->msisdn = $user->msisdn;
                 $event->trigger = "SYSTEM";
@@ -615,6 +617,8 @@ class CampaignController extends Controller
                 $event->status = "FAILED";
                 $event->save();
             }elseif (isset($res->amountTransaction) and $res->amountTransaction->transactionOperationStatus == 'Charged'){
+                \Log::info('charged');
+                \Log::info($res->amountTransaction);
                 $sub = Subscriber::where('msisdn', $user->msisdn)->first();
                 $sub->paid = 'PAID';
                 $saved = $sub->save();
@@ -691,7 +695,7 @@ class CampaignController extends Controller
             sleep(
                 $this->limiter()->availableIn($this->throttleKey()) + 1 // <= optional plus 1 sec to be on safe side
             );      
-            return $this->sendSmsForOne($msisdn, $message);
+            return $this->payment($msisdn);
         }
 
         IDEABIZ::generateAccessToken();
