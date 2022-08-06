@@ -726,7 +726,7 @@ class CampaignController extends Controller
             ]
         ];
         $response = IDEABIZ::apiCall($url, $method, $headers, $request_body);
-        \Log::info($response);
+        \Log::info('payment function');
         return $response;
 
         $this->limiter()->hit(
