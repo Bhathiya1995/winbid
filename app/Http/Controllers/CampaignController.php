@@ -601,6 +601,7 @@ class CampaignController extends Controller
     }
 
     public function renew(){
+        \Log::info('renew');
         $users = Subscriber::where('status', "SUBSCRIBED")->where('paid', 'NOTPAID')->get();
         foreach($users as $user){
             $payRes = $this->payment($user->msisdn);
@@ -725,6 +726,7 @@ class CampaignController extends Controller
             ]
         ];
         $response = IDEABIZ::apiCall($url, $method, $headers, $request_body);
+        \Log::info($response);
         return $response;
 
         $this->limiter()->hit(
