@@ -113,7 +113,7 @@ class CampaignController extends Controller
         $campaign->end_msg = $req->endMsg;
         $campaign->create_date = $req->createDate;
         $campaign->expire_date = $req->expireDate;
-        $campaign->state = '0';
+        $campaign->state = $req->state;
         $campaign->save();
         return redirect()->back()->with('success', 'Campaign Updated !!');
     }

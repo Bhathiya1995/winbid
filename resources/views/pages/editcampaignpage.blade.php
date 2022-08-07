@@ -13,11 +13,11 @@
                     @csrf
                     <div class="form-group mb-3">
                         <label for="welcomeMsg">Welcome Message</label>
-                        <input type="text" class="form-control" name="welcomeMsg" id="welcomeMsg"  placeholder="Enter Welcome Message" value={{$campaign->welcome_msg}}>
+                        <input type="text" class="form-control" name="welcomeMsg" id="welcomeMsg"  placeholder="Enter Welcome Message" value='{{$campaign->welcome_msg}}'>
                     </div>
                     <div class="form-group mb-3">
                         <label for="endMsg">End Message</label>
-                        <input type="text" class="form-control" name="endMsg" id="endMsg"  placeholder="Enter End Message" value={{$campaign->end_msg}}>
+                        <input type="text" class="form-control" name="endMsg" id="endMsg"  placeholder="Enter End Message" value='{{$campaign->end_msg}}'>
                     </div>
                     <div class="form-group mb-3">
                         <div class="row">
@@ -30,7 +30,7 @@
                                 <input type="date" class="form-control" name="expireDate" id="expireDate" value={{$campaign->expire_date}}>
                             </div>
                         </div>
-                        
+                        <input type="hidden" name='state' id = 'state' value={{$campaign->state}} />
                     </div>
                     <button type="submit" class="btn btn-primary">Update</button>
                 </form>
