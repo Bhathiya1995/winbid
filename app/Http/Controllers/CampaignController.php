@@ -191,8 +191,10 @@ class CampaignController extends Controller
                         $range=[];
                         if($bidCount >0){
                             $range = $this->getLastBidRange($campaign->id);
-                            $message = "Hurry Up! Your bid of {$words[1]} is not the winning bid at the moment. Now Lowest bid range is {$range[0]} - {$range[1]}. You have {$availabelBids} more free bid(s) for today";
-                            $this->sendSmsForOne($senderAddress, $message);
+                            if($words[1] > $range[1]){
+                                $message = "Hurry Up! Your bid of {$words[1]} is not the winning bid at the moment. Now Lowest bid range is {$range[0]} - {$range[1]}. You have {$availabelBids} more free bid(s) for today";
+                                $this->sendSmsForOne($senderAddress, $message);
+                            }
                         }
                         // print_r("SEND SMS ---> Thanks for your bid. You have {$availabelBids} chanses for today");
                     }else{
@@ -253,7 +255,7 @@ class CampaignController extends Controller
                         $event->status = "SUCCESS";
                         $event->save();
     
-                        $message1 = "Successfully subscribed to WASANA service. Rs.5 +tax/day apply. To deactivate type UNREG  BID & SMS to 66777. T&C:<T&C WASANA>";
+                        $message1 = "Successfully subscribed to WINBID service. Rs.5.00+tax/day apply. To deactivate type UNREG BID & SMS to 66777. T&C: https://tinyurl.com/cad6bj97";
                         $this->sendSmsForOne($msisdn, $message1);
 
                         $payRes = $this->payment($msisdn);
@@ -309,7 +311,7 @@ class CampaignController extends Controller
                         $event->status = "SUCCESS";
                         $event->save();
     
-                        $message1 = "Successfully subscribed to WINBID service. Rs.5 +tax/day apply. To deactivate type UNREG  BID & SMS to 66777. T&C:<T&C WASANA>";
+                        $message1 = "Successfully subscribed to WINBID service. Rs.5.00+tax/day apply. To deactivate type UNREG BID & SMS to 66777. T&C: https://tinyurl.com/cad6bj97";
                         $this->sendSmsForOne($msisdn, $message1);
 
                         $payRes = $this->payment($msisdn);
