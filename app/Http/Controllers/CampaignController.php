@@ -672,14 +672,19 @@ class CampaignController extends Controller
     public function test1(){
         // $this->activateCamapign();
 
-        $this->sendSmsForOne('94770453201', 'test laravel');
+        // $this->sendSmsForOne('94770453201', 'test laravel');
 
+        $test = "94770453201";
+        $date = Carbon::now()->format('d-m-Y');
+        $clientCo = $test."#".$date;
+        print_r($clientCo);
         // $response = $this->payment("94770453201");
         // $body = $response->getBody();
         // $res = json_decode($body);
         // print_r($res->amountTransaction->transactionOperationStatus);
 
-        // $this->checkBalance("94770453201");
+        // $res = $this->checkBalance("94770453201");
+        // print_r($res);
 
         // print_r($res);
         // if ($response->requestError != null){
@@ -697,6 +702,9 @@ class CampaignController extends Controller
             );      
             return $this->payment($msisdn);
         }
+
+        $date = Carbon::now()->format('d-m-Y');
+        $clientCo = $msisdn."#".$date;
 
         IDEABIZ::generateAccessToken();
         $access_token = IDEABIZ::getAccessToken();
