@@ -177,7 +177,7 @@ class CampaignController extends Controller
                     if($todayBidsCount >=0 and $todayBidsCount<3){
                         $campaign = Campaign::where('state', '1')->first();
 
-                        $bids = Bid::where('campaign_id', $campaign->$id)->where('status',1)->get();
+                        $bids = Bid::where('campaign_id', $campaign->id)->where('status',1)->get();
                         $bidCount = count($bids);
 
                         $bid = new Bid;
@@ -670,10 +670,15 @@ class CampaignController extends Controller
 
         // $this->sendSmsForOne('94770453201', 'test laravel');
 
-        $test = "94770453201";
-        $date = Carbon::now()->format('d-m-Y');
-        $clientCo = $test."#".$date;
-        print_r($clientCo);
+        // $test = "94770453201";
+        // $date = Carbon::now()->format('d-m-Y');
+        // $clientCo = $test."#".$date;
+        // print_r($clientCo);
+
+        $campaign = Campaign::where('state', '1')->first();
+        print_r($campaign->id);
+
+
         // $response = $this->payment("94770453201");
         // $body = $response->getBody();
         // $res = json_decode($body);
