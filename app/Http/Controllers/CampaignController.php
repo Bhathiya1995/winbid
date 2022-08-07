@@ -15,6 +15,10 @@ use Illuminate\Cache\RateLimiter;
 class CampaignController extends Controller
 {
 
+    public function __construct(){
+        set_time_limit(3600);
+    }
+
     public function dashboard(Request $req){
 
         if($req->campaignTime != null){
@@ -204,7 +208,7 @@ class CampaignController extends Controller
                     }
                     
                 }
-                elseif(($words[0] != "REG" or $words[0] != "UNREG") and $sub->paid = "PAID"){
+                elseif(($message != "REG BID" or $message != "UNREG BID") and $sub->paid = "PAID"){
                     // print_r("SEND SMS ---> Message is invalid");
                     $message = "Sorry invalid BID Amount! Method of bidding is, type BID<space> BID VALUE and SMS to 66777";
                     $this->sendSmsForOne($senderAddress, $message);
@@ -318,8 +322,9 @@ class CampaignController extends Controller
                         $body = $payRes->getBody();
                         $res = json_decode($body);
                         if(isset($res->requestError)){
-                            $subscriber->paid = 'NOTPAID';
-                            $saved = $subscriber->save();
+                            $sub = Subscriber::where('msisdn', $msisdn)->first();
+                            $sub->paid = 'NOTPAID';
+                            $saved = $sub->save();
 
                             $event = new Event;
                             $event->msisdn = $msisdn;
@@ -328,8 +333,9 @@ class CampaignController extends Controller
                             $event->status = "FAILED";
                             $event->save();
                         }elseif (isset($res->amountTransaction) and $res->amountTransaction->transactionOperationStatus == 'Charged'){
-                            $subscriber->paid = 'PAID';
-                            $saved = $subscriber->save();
+                            $sub = Subscriber::where('msisdn', $msisdn)->first();
+                            $sub->paid = 'PAID';
+                            $saved = $sub->save();
 
                             $event = new Event;
                             $event->msisdn = $msisdn;
@@ -454,12 +460,7 @@ class CampaignController extends Controller
                 return response()->json($res);
 
              }
-        }
-        
-        
-        
-        
-        
+        }       
         
     }
 
