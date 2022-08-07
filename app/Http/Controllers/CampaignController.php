@@ -177,7 +177,7 @@ class CampaignController extends Controller
                     if($todayBidsCount >=0 and $todayBidsCount<3){
                         $campaign = Campaign::where('state', '1')->first();
 
-                        $bids = Bid::where('campaign_id', $campaign_id)->where('status',1)->get();
+                        $bids = Bid::where('campaign_id', $campaign->$id)->where('status',1)->get();
                         $bidCount = count($bids);
 
                         $bid = new Bid;
