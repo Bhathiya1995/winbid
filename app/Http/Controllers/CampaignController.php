@@ -608,8 +608,6 @@ class CampaignController extends Controller
             $body = $payRes->getBody();
             $res = json_decode($body);
             if(isset($res->requestError)){
-                \Log::info('charge error');
-                \Log::info($res->requestError);
                 $event = new Event;
                 $event->msisdn = $user->msisdn;
                 $event->trigger = "SYSTEM";
@@ -617,8 +615,6 @@ class CampaignController extends Controller
                 $event->status = "FAILED";
                 $event->save();
             }elseif (isset($res->amountTransaction) and $res->amountTransaction->transactionOperationStatus == 'Charged'){
-                \Log::info('charged');
-                \Log::info($res->amountTransaction);
                 $sub = Subscriber::where('msisdn', $user->msisdn)->first();
                 $sub->paid = 'PAID';
                 $saved = $sub->save();
