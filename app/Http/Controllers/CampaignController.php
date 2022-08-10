@@ -576,7 +576,6 @@ class CampaignController extends Controller
                 $body = $payRes->getBody();
                 $res = json_decode($body);
                 \Log::info('dailyPayments');
-                \Log::info($res);
                 if(isset($res->requestError)){
                     $sub = Subscriber::where('msisdn', $user->msisdn)->first();
                     $sub->paid = 'NOTPAID';
@@ -604,7 +603,7 @@ class CampaignController extends Controller
     }
 
     public function renew(){
-        
+        \Log::info('Renew');
         $users = Subscriber::where('status', "SUBSCRIBED")->where('paid', 'NOTPAID')->get();
         foreach($users as $user){
             $payRes = $this->payment($user->msisdn);
