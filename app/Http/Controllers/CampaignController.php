@@ -582,7 +582,7 @@ class CampaignController extends Controller
                     $saved = $sub->save();
 
                     $event = new Event;
-                    $event->msisdn = $msisdn;
+                    $event->msisdn = $user->msisdn;
                     $event->trigger = "SYSTEM";
                     $event->event = "CHARGING"; 
                     $event->status = "FAILED";
@@ -593,7 +593,7 @@ class CampaignController extends Controller
                     $saved = $sub->save();
 
                     $event = new Event;
-                    $event->msisdn = $msisdn;
+                    $event->msisdn = $user->msisdn;
                     $event->trigger = "SYSTEM";
                     $event->event = "CHARGING"; 
                     $event->status = "SUCCESS";
@@ -677,8 +677,14 @@ class CampaignController extends Controller
         // $clientCo = $test."#".$date;
         // print_r($clientCo);
 
-        $campaign = Campaign::where('state', '1')->first();
-        print_r($campaign->id);
+        // $campaign = Campaign::where('state', '1')->first();
+        // print_r($campaign->id);
+
+        $payRes = $this->payment('94770453201');
+        $body = $payRes->getBody();
+        $res = json_decode($body);
+        print_r($res);
+    
 
 
         // $response = $this->payment("94770453201");
@@ -720,11 +726,11 @@ class CampaignController extends Controller
         ];
         $request_body = [
             "amountTransaction" =>[
-                "clientCorrelator"=> '{$msisdn}',
+                "clientCorrelator"=> "{$clientCo}",
                 "endUserId"=>"tel:+".$msisdn,
                 "paymentAmount"=> [
                     "chargingInformation"=> [
-                        "amount"=>5,
+                        "amount"=>1,
                         "currency"=>"LKR",
                         "description"=> "Subscriberd charges for WinBid Service"
                     ],
