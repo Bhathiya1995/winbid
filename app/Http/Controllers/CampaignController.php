@@ -208,6 +208,10 @@ class CampaignController extends Controller
                     }
                     
                 }
+                elseif($message = "UNREG BID" and !$this->isSubscriber($senderAddress)) {
+                    $message = "You are successfully Deactivated the WINBID Service. Thank you for using WINBID SMS service. To Activate the WINBID service type REG BID & SMS to 66777";
+                    $this->sendSmsForOne($msisdn, $message);
+                }
                 elseif(($message != "REG BID") and $sub->paid = "PAID"){
                     // print_r("SEND SMS ---> Message is invalid");
                     $message = "Sorry invalid BID Amount! Method of bidding is, type BID<space> BID VALUE and SMS to 66777";
