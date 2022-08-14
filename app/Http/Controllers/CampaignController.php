@@ -731,7 +731,7 @@ class CampaignController extends Controller
                 "endUserId"=>"tel:+".$msisdn,
                 "paymentAmount"=> [
                     "chargingInformation"=> [
-                        "amount"=>1,
+                        "amount"=>5,
                         "currency"=>"LKR",
                         "description"=> "Subscriberd charges for WinBid Service"
                     ],
