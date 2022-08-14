@@ -260,8 +260,8 @@ class CampaignController extends Controller
                         $event->status = "SUCCESS";
                         $event->save();
     
-                        $message1 = "Successfully subscribed to WINBID service. Rs.5.00+tax/day apply. To deactivate type UNREG BID & SMS to 66777. T&C: https://tinyurl.com/cad6bj97";
-                        $this->sendSmsForOne($msisdn, $message1);
+                        // $message1 = "Successfully subscribed to WINBID service. Rs.5.00+tax/day apply. To deactivate type UNREG BID & SMS to 66777. T&C: https://tinyurl.com/cad6bj97";
+                        // $this->sendSmsForOne($msisdn, $message1);
 
                         $payRes = $this->payment($msisdn);
                         $body = $payRes->getBody();
@@ -316,8 +316,8 @@ class CampaignController extends Controller
                         $event->status = "SUCCESS";
                         $event->save();
     
-                        $message1 = "Successfully subscribed to WINBID service. Rs.5.00+tax/day apply. To deactivate type UNREG BID & SMS to 66777. T&C: https://tinyurl.com/cad6bj97";
-                        $this->sendSmsForOne($msisdn, $message1);
+                        // $message1 = "Successfully subscribed to WINBID service. Rs.5.00+tax/day apply. To deactivate type UNREG BID & SMS to 66777. T&C: https://tinyurl.com/cad6bj97";
+                        // $this->sendSmsForOne($msisdn, $message1);
 
                         $payRes = $this->payment($msisdn);
                         $body = $payRes->getBody();
@@ -369,8 +369,8 @@ class CampaignController extends Controller
                         $event->status = "SUCCESS";
                         $event->save();
 
-                        $message = "You are successfully Deactivated the WINBID Service. Thank you for using WINBID SMS service. To Activate the WINBID service type REG BID & SMS to 66777";
-                        $this->sendSmsForOne($msisdn, $message);
+                        // $message = "You are successfully Deactivated the WINBID Service. Thank you for using WINBID SMS service. To Activate the WINBID service type REG BID & SMS to 66777";
+                        // $this->sendSmsForOne($msisdn, $message);
     
                     }else{
                         $event = new Event;
