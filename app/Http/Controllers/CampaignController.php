@@ -250,6 +250,7 @@ class CampaignController extends Controller
                     $subscriber->msisdn = $msisdn;
                     $subscriber->subscribed_time = Carbon::now();
                     $subscriber->status = $status;
+                    $subscriber->paid = 'NOTPAID';
                     $saved = $subscriber->save();
     
                     if($saved){
