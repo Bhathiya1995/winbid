@@ -176,13 +176,16 @@ class CampaignController extends Controller
                 //     $this->sendSmsForOne($senderAddress, $message);    
                 // } 
                 if (count($words) == 2 and $words[0] == "BID" and is_numeric($words[1]) ){
-                    $todayBidsCount = Bid::whereDate('created_at', Carbon::today())->where('status',1)->count();
+                    $todayBidsCount = Bid::whereDate('created_at', Carbon::today())->where('tel_number',"$senderAddress")->where('status',1)->count();
 
                     if($todayBidsCount >=0 and $todayBidsCount<3){
                         $campaign = Campaign::where('state', '1')->first();
 
                         $bids = Bid::where('campaign_id', $campaign->id)->where('status',1)->get();
                         $bidCount = count($bids);
+
+                        print_r($bidCount);
+                        print_r($todayBidsCount);
 
                         $bid = new Bid;
                         $bid->campaign_id = $campaign->id;
