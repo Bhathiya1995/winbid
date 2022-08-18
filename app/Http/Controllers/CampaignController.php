@@ -268,8 +268,9 @@ class CampaignController extends Controller
                         $body = $payRes->getBody();
                         $res = json_decode($body);
                         if(isset($res->requestError)){
-                            $subscriber->paid = 'NOTPAID';
-                            $saved = $subscriber->save();
+                            $sub = Subscriber::where('msisdn', $msisdn)->first();
+                            $sub->paid = 'NOTPAID';
+                            $saved = $sub->save();
 
                             $event = new Event;
                             $event->msisdn = $msisdn;
@@ -278,8 +279,9 @@ class CampaignController extends Controller
                             $event->status = "FAILED";
                             $event->save();
                         }elseif (isset($res->amountTransaction) and $res->amountTransaction->transactionOperationStatus == 'Charged'){
-                            $subscriber->paid = 'PAID';
-                            $saved = $subscriber->save();
+                            $sub = Subscriber::where('msisdn', $msisdn)->first();
+                            $sub->paid = 'PAID';
+                            $saved = $sub->save();
 
                             $event = new Event;
                             $event->msisdn = $msisdn;
