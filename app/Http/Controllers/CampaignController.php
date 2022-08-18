@@ -184,8 +184,6 @@ class CampaignController extends Controller
                         $bids = Bid::where('campaign_id', $campaign->id)->where('status',1)->get();
                         $bidCount = count($bids);
 
-                        print_r($bidCount);
-                        print_r($todayBidsCount);
 
                         $bid = new Bid;
                         $bid->campaign_id = $campaign->id;
