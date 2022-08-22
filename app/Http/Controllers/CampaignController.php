@@ -615,6 +615,7 @@ class CampaignController extends Controller
             $body = $payRes->getBody();
             $res = json_decode($body);
             if(isset($res->requestError) or $res->amountTransaction->transactionOperationStatus == 'Failed'){
+                \Log::info('Failed');
                 $event = new Event;
                 $event->msisdn = $user->msisdn;
                 $event->trigger = "SYSTEM";
@@ -622,6 +623,7 @@ class CampaignController extends Controller
                 $event->status = "FAILED";
                 $event->save();
             }elseif (isset($res->amountTransaction) and $res->amountTransaction->transactionOperationStatus == 'Charged'){
+                \Log::info('Charged');
                 $sub = Subscriber::where('msisdn', $user->msisdn)->first();
                 $sub->paid = 'PAID';
                 $saved = $sub->save();
@@ -660,7 +662,7 @@ class CampaignController extends Controller
     public function test(){
         IDEABIZ::generateAccessToken();
         $access_token = IDEABIZ::getAccessToken();
-        $url = "https://ideabiz.lk/apicall/subscription/v3/status/tel%3A%2B94770453201";
+        $url = "https://ideabiz.lk/apicall/subscription/v3/status/tel%3A%2B94772774321";
         $method = "GET";
         $headers = [
                 "Content-Type" => "application/json",
@@ -736,7 +738,7 @@ class CampaignController extends Controller
                 "endUserId"=>"tel:+".$msisdn,
                 "paymentAmount"=> [
                     "chargingInformation"=> [
-                        "amount"=>1,
+                        "amount"=>5,
                         "currency"=>"LKR",
                         "description"=> "Subscriberd charges for WinBid Service"
                     ],
