@@ -268,7 +268,7 @@ class CampaignController extends Controller
                         $payRes = $this->payment($msisdn);
                         $body = $payRes->getBody();
                         $res = json_decode($body);
-                        if(isset($res->requestError)){
+                        if(isset($res->requestError) or $res->amountTransaction->transactionOperationStatus == 'Failed'){
                             $sub = Subscriber::where('msisdn', $msisdn)->first();
                             $sub->paid = 'NOTPAID';
                             $saved = $sub->save();
@@ -326,7 +326,7 @@ class CampaignController extends Controller
                         $payRes = $this->payment($msisdn);
                         $body = $payRes->getBody();
                         $res = json_decode($body);
-                        if(isset($res->requestError)){
+                        if(isset($res->requestError) or $res->amountTransaction->transactionOperationStatus == 'Failed'){
                             $sub = Subscriber::where('msisdn', $msisdn)->first();
                             $sub->paid = 'NOTPAID';
                             $saved = $sub->save();
@@ -581,7 +581,7 @@ class CampaignController extends Controller
                 $body = $payRes->getBody();
                 $res = json_decode($body);
                 \Log::info('dailyPayments');
-                if(isset($res->requestError)){
+                if(isset($res->requestError) or $res->amountTransaction->transactionOperationStatus == 'Failed' ){
                     $sub = Subscriber::where('msisdn', $user->msisdn)->first();
                     $sub->paid = 'NOTPAID';
                     $saved = $sub->save();
@@ -614,7 +614,7 @@ class CampaignController extends Controller
             $payRes = $this->payment($user->msisdn);
             $body = $payRes->getBody();
             $res = json_decode($body);
-            if(isset($res->requestError)){
+            if(isset($res->requestError) or $res->amountTransaction->transactionOperationStatus == 'Failed'){
                 $event = new Event;
                 $event->msisdn = $user->msisdn;
                 $event->trigger = "SYSTEM";
@@ -689,6 +689,7 @@ class CampaignController extends Controller
         $body = $payRes->getBody();
         $res = json_decode($body);
         print_r($res);
+        print_r($res->amountTransaction->transactionOperationStatus );
     
 
 
@@ -731,11 +732,11 @@ class CampaignController extends Controller
         ];
         $request_body = [
             "amountTransaction" =>[
-                "clientCorrelator"=> "{$clientCo}",
+                "clientCorrelator"=> "12dsa3",
                 "endUserId"=>"tel:+".$msisdn,
                 "paymentAmount"=> [
                     "chargingInformation"=> [
-                        "amount"=>5,
+                        "amount"=>1,
                         "currency"=>"LKR",
                         "description"=> "Subscriberd charges for WinBid Service"
                     ],
