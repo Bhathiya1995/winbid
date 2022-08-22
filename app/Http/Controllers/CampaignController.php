@@ -732,7 +732,7 @@ class CampaignController extends Controller
         ];
         $request_body = [
             "amountTransaction" =>[
-                "clientCorrelator"=> "12dsa3",
+                "clientCorrelator"=> "{$clientCo}",
                 "endUserId"=>"tel:+".$msisdn,
                 "paymentAmount"=> [
                     "chargingInformation"=> [
