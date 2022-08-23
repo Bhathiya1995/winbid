@@ -220,7 +220,7 @@ class CampaignController extends Controller
                         }
                         // print_r("SEND SMS ---> Thanks for your bid. You have {$availabelBids} chanses for today");
                     }else{
-                        $message = "Sorry. Your daily bidding chances exceeded, Please try again tomorrow. To win more gifts stay tuned with WASANA SMS service.";
+                        $message = "Sorry. Your daily bidding chances exceeded, Please try again tomorrow. To win more gifts stay tuned with WINBID SMS service.";
                         $this->sendSmsForOne($senderAddress, $message);
                         // print_r("SEND SMS ---> Your chanses for bid today is over. Try again tommorrow");
                     }
