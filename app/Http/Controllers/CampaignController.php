@@ -92,6 +92,7 @@ class CampaignController extends Controller
     
     public function createCampaign(Request $req){
         $campaign = new Campaign;
+        $campaign->name = $req->campName;
         $campaign->welcome_msg = $req->welcomeMsg;
         $campaign->end_msg = $req->endMsg;
         $campaign->create_date = $req->createDate;
@@ -109,6 +110,7 @@ class CampaignController extends Controller
 
     public function updateCampaign(Request $req, $id){
         $campaign = Campaign::find($id);
+        $campaign->name = $req->campName;
         $campaign->welcome_msg = $req->welcomeMsg;
         $campaign->end_msg = $req->endMsg;
         $campaign->create_date = $req->createDate;
@@ -198,6 +200,12 @@ class CampaignController extends Controller
                             $range = $this->getLastBidRange($campaign->id);
                             if($words[1] > $range[1]){
                                 $message = "Hurry Up! Your bid of {$words[1]} is not the winning bid at the moment. Now Lowest bid range is {$range[0]} - {$range[1]}. You have {$availabelBids} more free bid(s) for today";
+                                $this->sendSmsForOne($senderAddress, $message);
+                            }elseif($range[0]<$words[1] or $words[1]<= $range[1]){
+                                $message = "You have {$availabelBids} more free bid(s) for today";
+                                $this->sendSmsForOne($senderAddress, $message);
+                            }elseif($words[1] <= $range[0]){
+                                $message = "Congratulations! You are the lowest bidder for the {$campaign->name} Promo! at the moment. BID more to increase your chances.";
                                 $this->sendSmsForOne($senderAddress, $message);
                             }
                         }

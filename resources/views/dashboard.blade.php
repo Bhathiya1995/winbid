@@ -40,6 +40,7 @@
             <table class="table table-bordered table-striped table-dark">
                 <thead class="thead-dark">
                     <th>ID</th>
+                    <th>Name</th>
                     <th>Welcome Message</th>
                     <th>End Message</th>
                     <th>Create Date</th>
@@ -51,6 +52,7 @@
                     @foreach($campaigns as $campaign)
                         <tr>
                         <td>{{$campaign->id}}</td>
+                        <td>{{$campaign->name}}</td>
                         <td>{{$campaign->welcome_msg}}</td>
                         <td>{{$campaign->end_msg}}</td>
                         <td>{{$campaign->create_date}}</td>

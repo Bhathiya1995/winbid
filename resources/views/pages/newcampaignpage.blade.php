@@ -12,6 +12,10 @@
                 <form action="/dashboard/createNewCampign" method="POST">
                     @csrf
                     <div class="form-group mb-3">
+                        <label for="campName">Campaign Name</label>
+                        <input type="text" class="form-control" name="campName" id="campName" placeholder="Enter Campaign Name">
+                    </div>
+                    <div class="form-group mb-3">
                         <label for="welcomeMsg">Welcome Message</label>
                         <input type="text" class="form-control" name="welcomeMsg" id="welcomeMsg" placeholder="Enter Welcome Message">
                     </div>
