@@ -199,22 +199,23 @@ class CampaignController extends Controller
                         if($bidCount >0){
                             $range = $this->getLastBidRange($campaign->id);
                             $winningBid = $this->getWiningBid($campaign->id);
-                            \Log::info($winningBid);
                             if($words[1] > $range[1]){
                                 $message = "Hurry Up! Your bid of {$words[1]} is not the winning bid at the moment. Now Lowest bid range is {$range[0]} - {$range[1]}. You have {$availabelBids} more free bid(s) for today";
                                 $this->sendSmsForOne($senderAddress, $message);
                             }
                             elseif($words[1] < $range[0] and $words[1] != $winningBid){
-                                \Log::info("adui and wininng bid nemei");
                                 $message = "Hurry Up! Your bid of {$words[1]} is not the winning bid at the moment. Now Lowest bid range is {$range[0]} - {$range[1]}. You have {$availabelBids} more free bid(s) for today";
                                 $this->sendSmsForOne($senderAddress, $message);
                             }elseif(($range[0]<$words[1]) && ($words[1]<= $range[1])){
-                                $message = "You have {$availabelBids} more free bid(s) for today";
-                                $this->sendSmsForOne($senderAddress, $message);
-                            }elseif($words[1] = $winningBid){
-                                \Log::info("winning bid eka thamai");
-                                $message = "Congratulations! You are the lowest bidder for the {$campaign->name} Promo! at the moment. BID more to increase your chances. You have {$availabelBids} more free bid(s) for today";
-                                $this->sendSmsForOne($senderAddress, $message);
+
+                                if($words[1] == $winningBid){
+                                    $message = "Congratulations! You are the lowest bidder for the {$campaign->name} Promo! at the moment. BID more to increase your chances. You have {$availabelBids} more free bid(s) for today";
+                                    $this->sendSmsForOne($senderAddress, $message);
+                                }else{
+                                    $message = "You have {$availabelBids} more free bid(s) for today";
+                                    $this->sendSmsForOne($senderAddress, $message);
+                                }
+                                
                             }
                         }
                         // print_r("SEND SMS ---> Thanks for your bid. You have {$availabelBids} chanses for today");
@@ -722,8 +723,16 @@ class CampaignController extends Controller
         // print_r($res);
         // print_r($res->amountTransaction->transactionOperationStatus );
 
-        $winner = $this->getWiningBid('1');
-        print_r($winner);
+        // $winner = $this->getWiningBid('1');
+        // print_r($winner);
+
+        $x = 10;
+
+        if ($x > 5 && $x <15){
+            print_r('a');
+        }elseif($x>15){
+            print_r('b');
+        }
     
 
 
