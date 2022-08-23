@@ -44,7 +44,7 @@ class CampaignController extends Controller
             
             foreach($allWinners as $winners){
                 $bidCount = Bid::where([['campaign_id','=', $req->campaignTime],['bid_value','=',$winners->bid_value]])->count();
-                if ($bidCount == 1){
+                if ($bidCount == 1 and $winners->status == 1){
                     $winner = Bid::where('id',$winners->id)->first();
                     break;
                 }
@@ -194,17 +194,22 @@ class CampaignController extends Controller
                         $bid->status = "1";
                         $bid->save();
                         $availabelBids = 2-$todayBidsCount;
-
+                        
                         $range=[];
                         if($bidCount >0){
                             $range = $this->getLastBidRange($campaign->id);
+                            $winningBid = $this->getWiningBid($campaign->id);
                             if($words[1] > $range[1]){
+                                $message = "Hurry Up! Your bid of {$words[1]} is not the winning bid at the moment. Now Lowest bid range is {$range[0]} - {$range[1]}. You have {$availabelBids} more free bid(s) for today";
+                                $this->sendSmsForOne($senderAddress, $message);
+                            }
+                            elseif($words[1] < $range[0] and $words[1] = $winningBid){
                                 $message = "Hurry Up! Your bid of {$words[1]} is not the winning bid at the moment. Now Lowest bid range is {$range[0]} - {$range[1]}. You have {$availabelBids} more free bid(s) for today";
                                 $this->sendSmsForOne($senderAddress, $message);
                             }elseif($range[0]<$words[1] or $words[1]<= $range[1]){
                                 $message = "You have {$availabelBids} more free bid(s) for today";
                                 $this->sendSmsForOne($senderAddress, $message);
-                            }elseif($words[1] <= $range[0]){
+                            }elseif($words[1] = $winningBid){
                                 $message = "Congratulations! You are the lowest bidder for the {$campaign->name} Promo! at the moment. BID more to increase your chances.";
                                 $this->sendSmsForOne($senderAddress, $message);
                             }
@@ -228,6 +233,19 @@ class CampaignController extends Controller
         }
 
            
+    }
+
+    public function getWiningBid($campaignId) {
+        $allWinners = Bid::where('campaign_id', $campaignId)->orderBy('bid_value')->get();
+            
+        foreach($allWinners as $winners){
+            $bidCount = Bid::where([['campaign_id','=', $campaignId],['bid_value','=',$winners->bid_value]])->count();
+            if ($bidCount == 1 and $winners->status == 1){
+                $winner = Bid::where('id',$winners->id)->first();
+                break;
+            }
+        }
+        return $winner->bid_value;
     }
 
 
@@ -695,11 +713,14 @@ class CampaignController extends Controller
         // $campaign = Campaign::where('state', '1')->first();
         // print_r($campaign->id);
 
-        $payRes = $this->payment('94770453201');
-        $body = $payRes->getBody();
-        $res = json_decode($body);
-        print_r($res);
-        print_r($res->amountTransaction->transactionOperationStatus );
+        // $payRes = $this->payment('94770453201');
+        // $body = $payRes->getBody();
+        // $res = json_decode($body);
+        // print_r($res);
+        // print_r($res->amountTransaction->transactionOperationStatus );
+
+        $winner = $this->getWiningBid('1');
+        print_r($winner);
     
 
 
