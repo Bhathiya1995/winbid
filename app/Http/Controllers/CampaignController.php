@@ -212,7 +212,7 @@ class CampaignController extends Controller
                                     $message = "Congratulations! You are the lowest bidder for the {$campaign->name} Promo! at the moment. BID more to increase your chances. You have {$availabelBids} more free bid(s) for today";
                                     $this->sendSmsForOne($senderAddress, $message);
                                 }else{
-                                    $message = "You have {$availabelBids} more free bid(s) for today";
+                                    $message = "Hurry Up! Your bid of {$words[1]} is not the winning bid at the moment. Now Lowest bid range is {$range[0]} - {$range[1]}. You have {$availabelBids} more free bid(s) for today";
                                     $this->sendSmsForOne($senderAddress, $message);
                                 }
                                 
