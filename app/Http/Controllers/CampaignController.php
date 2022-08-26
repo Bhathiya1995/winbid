@@ -229,6 +229,7 @@ class CampaignController extends Controller
 
                 elseif(($message != "REG BID") and $sub->paid = "PAID"){
                     // print_r("SEND SMS ---> Message is invalid");
+                    \Log::info($message);
                     $message = "Sorry invalid BID Amount! Method of bidding is, type BID<space> BID VALUE and SMS to 66777";
                     $this->sendSmsForOne($senderAddress, $message);
                 }
