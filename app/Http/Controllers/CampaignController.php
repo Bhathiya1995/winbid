@@ -227,7 +227,7 @@ class CampaignController extends Controller
                     
                 }
 
-                elseif(($message != "REG BID") and $sub->paid = "PAID"){
+                elseif(($message != "REG BID" or strtoupper($message)!= "YES") and $sub->paid = "PAID"){
                     // print_r("SEND SMS ---> Message is invalid");
                     \Log::info($message);
                     $message = "Sorry invalid BID Amount! Method of bidding is, type BID<space> BID VALUE and SMS to 66777";
@@ -727,13 +727,7 @@ class CampaignController extends Controller
         // $winner = $this->getWiningBid('1');
         // print_r($winner);
 
-        $x = 10;
-
-        if ($x > 5 && $x <15){
-            print_r('a');
-        }elseif($x>15){
-            print_r('b');
-        }
+        print_r(strtoupper('yes'));
     
 
 
