@@ -329,7 +329,7 @@ class CampaignController extends Controller
 
     
                         if($campaign != null){
-                            sleep(300);
+                            // sleep(300);
                             $message = $campaign->welcome_msg;
                             $this->sendSmsForOne($msisdn, $message)->delay();
                         }
