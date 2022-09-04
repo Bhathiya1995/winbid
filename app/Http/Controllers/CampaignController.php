@@ -232,6 +232,7 @@ class CampaignController extends Controller
                     if(strtoupper($message) != "YES"){
                         $message = "Sorry invalid BID Amount! Method of bidding is, type BID<space> BID VALUE and SMS to 66777";
                         $this->sendSmsForOne($senderAddress, $message);
+                        print_r($message);
                     }
                     
                     
@@ -328,8 +329,9 @@ class CampaignController extends Controller
 
     
                         if($campaign != null){
+                            sleep(300);
                             $message = $campaign->welcome_msg;
-                            $this->sendSmsForOne($msisdn, $message);
+                            $this->sendSmsForOne($msisdn, $message)->delay();
                         }
                         
                     }else{
