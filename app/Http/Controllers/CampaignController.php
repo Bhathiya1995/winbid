@@ -332,7 +332,7 @@ class CampaignController extends Controller
                             // sleep(300);
                             \Log::info('sleep eka iwarai'); 
                             $message = $campaign->welcome_msg;
-                            $this->sendSmsForOne($msisdn, $message)->delay(now()->addMinutes(5));;
+                            $this->sendSmsForOne($msisdn, $message);
                         }
                         
                     }else{
@@ -699,7 +699,7 @@ class CampaignController extends Controller
     public function test(){
         IDEABIZ::generateAccessToken();
         $access_token = IDEABIZ::getAccessToken();
-        $url = "https://ideabiz.lk/apicall/subscription/v3/status/tel%3A%2B94772774321";
+        $url = "https://ideabiz.lk/apicall/subscription/v3/status/tel%3A%2B94766548833";
         $method = "GET";
         $headers = [
                 "Content-Type" => "application/json",
