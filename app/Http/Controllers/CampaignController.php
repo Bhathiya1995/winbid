@@ -332,7 +332,7 @@ class CampaignController extends Controller
                             // sleep(300);
                             \Log::info('sleep eka iwarai'); 
                             $message = $campaign->welcome_msg;
-                            $this->sendSmsForOne($msisdn, $message);
+                            $this->sendSmsForOne($msisdn, $message)->delay(now()->addMinutes(5));;
                         }
                         
                     }else{
