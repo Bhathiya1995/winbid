@@ -13,7 +13,7 @@
 
 Customers can only place their bids in Rupee values (Cents will not be considered). Single customer can place 3 bids per day via SMS with a daily subscription charge. If minimum of two customers place the same bid, the bid will be cancelled and relevant customers will be notified by the system.
 
-All the customers can register to the service by sending a SMS as “REG<space>BID” to the shortcode 66777 and place their bids by sending SMS as “BID<space>X” to the same short code. (Eg: BID 5)
+All the customers can register to the service by sending a SMS as “REG<Space>BID” to the shortcode 66777 and place their bids by sending SMS as “BID<space>X” to the same short code. (Eg: BID 5)
 
 To deactivate type UNREG BID & SMS to 66777.</p>
 
